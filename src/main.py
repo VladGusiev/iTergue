@@ -1,5 +1,13 @@
 import curses
 from curses import wrapper
+from enum import Enum
+
+
+class Direction(Enum):
+    UP = ord("k")
+    RIGHT = ord("l")
+    DOWN = ord("j")
+    LEFT = ord("h")
 
 
 class Player:
@@ -11,9 +19,19 @@ class Player:
         self.y_coord = y
         self.x_coord = x
 
-    def move(self, x: int, y: int):
-        self.x_coord += x
-        self.y_coord += y
+    def move(self, x: str):
+        if x == Direction.UP.value:
+            self.x_coord += 0
+            self.y_coord += -1
+        if x == Direction.RIGHT.value:
+            self.x_coord += 1
+            self.y_coord += 0
+        if x == Direction.DOWN.value:
+            self.x_coord += 0
+            self.y_coord += 1
+        if x == Direction.LEFT.value:
+            self.x_coord += -1
+            self.y_coord += 0
 
 
 def main():
@@ -27,7 +45,7 @@ def start(stdscr):
     stdscr.refresh()
 
     player = Player(10, 10)
-    stdscr.addstr(player.x_coord, player.y_coord, player.display)
+    stdscr.addstr(player.y_coord, player.x_coord, player.display)
 
     stdscr.addstr(curses.LINES - 1, 0, "Press Q to quit")
     index = 0
@@ -37,8 +55,8 @@ def start(stdscr):
             break
         stdscr.clear()
         stdscr.addstr(curses.LINES - 1, 0, "Press Q to quit")
-        player.move(1, 0)
-        stdscr.addstr(player.x_coord, player.y_coord, player.display)
+        player.move(ch)
+        stdscr.addstr(player.y_coord, player.x_coord, player.display)
         index += 1
 
 
