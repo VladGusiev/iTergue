@@ -6,3 +6,8 @@ class Direction(Enum):
     RIGHT = ord("l")
     DOWN = ord("j")
     LEFT = ord("h")
+
+class RoomObject(Enum):
+    WALL = "#"
+    FLOOR = "."
+    PLAYER = "@"
