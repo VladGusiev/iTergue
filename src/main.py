@@ -1,37 +1,7 @@
 import curses
 from curses import wrapper
-from enum import Enum
 
-
-class Direction(Enum):
-    UP = ord("k")
-    RIGHT = ord("l")
-    DOWN = ord("j")
-    LEFT = ord("h")
-
-
-class Player:
-    x_coord: int
-    y_coord: int
-    display: str = "@"
-
-    def __init__(self, x=0, y=0):
-        self.y_coord = y
-        self.x_coord = x
-
-    def move(self, x: str):
-        if x == Direction.UP.value:
-            self.x_coord += 0
-            self.y_coord += -1
-        if x == Direction.RIGHT.value:
-            self.x_coord += 1
-            self.y_coord += 0
-        if x == Direction.DOWN.value:
-            self.x_coord += 0
-            self.y_coord += 1
-        if x == Direction.LEFT.value:
-            self.x_coord += -1
-            self.y_coord += 0
+from Player import Player
 
 
 def main():
