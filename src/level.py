@@ -8,6 +8,7 @@ class Level:
         self.height = len(data['tiles'])
         self.player_start = data['player_start']
         self.tiles = data['tiles']
+        self.enemies = data.get('enemies')
 
     def tile_at(self, x: int, y: int) -> str:
         if 0 <= x < self.width and 0 <= y < self.height:

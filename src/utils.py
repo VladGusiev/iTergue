@@ -11,3 +11,7 @@ class RoomObject(Enum):
     WALL = "#"
     FLOOR = "."
     PLAYER = "@"
+
+    # enemies signs
+    SLIME = "s"
+    ORC = "o"

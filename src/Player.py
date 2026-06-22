@@ -7,6 +7,8 @@ from typing import List
 class Player:
     x_coord: int
     y_coord: int
+    hp: int = 100
+    damage: int = 10
 
     def __init__(self, x=0, y=0):
         self.y_coord = y
