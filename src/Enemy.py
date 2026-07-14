@@ -3,23 +3,21 @@ from Player import Player
 from Level import Level
 from collections import deque
 
-class Enemy:
-    x_coord: int
-    y_coord: int
-    hp: int
-    damage: int
+from dataclasses import dataclass
 
-    def __init__(self, x=0, y=0, display=RoomObject.SLIME.value, hp=10, damage=5):
-        self.y_coord = y
-        self.x_coord = x
-        self.display = display
-        self.hp = hp
-        self.damage = damage
+@dataclass
+class Enemy:
+    x: int = 0
+    y: int = 0
+    hp: int = 10
+    damage: int = 5
+    display: str = RoomObject.SLIME.value
+
 
     def move(self, player: Player, level: Level):
         # BFS to find the player's position and move towards it
-        enemy_pos = (self.x_coord, self.y_coord)
-        player_pos = (player.x_coord, player.y_coord)
+        enemy_pos = (self.x, self.y)
+        player_pos = (player.x, player.y)
 
         coordinates = deque([enemy_pos])
         path = {enemy_pos: None}
@@ -47,7 +45,7 @@ class Enemy:
             attack(self, player)
         else:
             # move the enemy to the player's position
-            self.x_coord, self.y_coord = next_step
+            self.x, self.y = next_step
 
 
 

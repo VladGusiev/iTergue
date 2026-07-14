@@ -34,7 +34,7 @@ def load_enemies(level: Level) -> List[Enemy]:
 
 def drawEnemies(stdscr, enemies: list, camera: dict):
     for enemy in enemies:
-        sy, sx = enemy.y_coord - camera["y"], enemy.x_coord - camera["x"]
+        sy, sx = enemy.y - camera["y"], enemy.x - camera["x"]
         if 0 <= sy < curses.LINES-1 and 0 <= sx < curses.COLS:
             stdscr.addch(sy, sx, enemy.display)
 
@@ -51,7 +51,7 @@ def update_state(player: Player, camera: dict, ch: int, level: Level, enemies: L
     new_x, new_y = player.proposed_position(ch) 
     # if enemy is within player's proposed position, reduce enemies hp
     for enemy in list(enemies):
-        if enemy.x_coord == new_x and enemy.y_coord == new_y:
+        if enemy.x == new_x and enemy.y == new_y:
             attack(player, enemy)
             if enemy.hp <= 0:
                 enemies.remove(enemy)
@@ -66,8 +66,8 @@ def update_state(player: Player, camera: dict, ch: int, level: Level, enemies: L
         if enemy.hp <= 0:
             enemies.remove(enemy)
 
-    camera["x"] = player.x_coord - curses.COLS // 2
-    camera["y"] = player.y_coord - curses.LINES // 2
+    camera["x"] = player.x - curses.COLS // 2
+    camera["y"] = player.y - curses.LINES // 2
 
 
 def render(stdscr, player: Player, level: Level, camera: dict, enemies: List[Enemy]):
@@ -92,7 +92,7 @@ def start(stdscr):
     enemies: List[Enemy] = load_enemies(level)
 
     player = Player(level.player_start.get("x"), level.player_start.get("y"))
-    camera = {"x": player.x_coord - curses.COLS // 2, "y": player.y_coord - curses.LINES // 2}
+    camera = {"x": player.x - curses.COLS // 2, "y": player.y - curses.LINES // 2}
 
 
     render(stdscr, player, level, camera, enemies)
