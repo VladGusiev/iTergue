@@ -1,4 +1,4 @@
-from utils import Direction
+from utils import Direction, Point
 from utils import RoomObject
 
 from typing import List
@@ -13,7 +13,7 @@ class Player:
     damage: int = 10
     display: str = RoomObject.PLAYER.value
     
-    def proposed_position(self, keycode: str) -> List[int]:
+    def proposed_position(self, keycode: str) -> Point:
         if keycode == Direction.UP.value:
             new_x = self.x
             new_y = self.y - 1
@@ -29,7 +29,7 @@ class Player:
         else:
             new_x = self.x
             new_y = self.y
-        return [new_x, new_y]
+        return new_x, new_y
 
     def set_position(self, x: int, y: int):
         self.x = x

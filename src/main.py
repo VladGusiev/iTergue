@@ -3,7 +3,7 @@ from curses import wrapper
 
 from Player import Player
 from Level import Level
-from utils import RoomObject, attack
+from utils import Point, RoomObject, attack
 
 
 from Enemy import Enemy
@@ -32,22 +32,22 @@ def load_enemies(level: Level) -> List[Enemy]:
         enemies.append(enemy)
     return enemies
 
-def drawEnemies(stdscr, enemies: list, camera: dict):
+def drawEnemies(stdscr, enemies: list, camera: Point):
     for enemy in enemies:
-        sy, sx = enemy.y - camera["y"], enemy.x - camera["x"]
+        sy, sx = enemy.y - camera.y, enemy.x - camera.x
         if 0 <= sy < curses.LINES-1 and 0 <= sx < curses.COLS:
             stdscr.addch(sy, sx, enemy.display)
 
-def drawLevel(stdscr, level: Level, camera: dict):
+def drawLevel(stdscr, level: Level, camera: Point):
     for y in range(level.height):
         for x in range(level.width):
             char = level.tile_at(x, y)
-            sy, sx = y - camera["y"], x - camera["x"]
+            sy, sx = y - camera.y, x - camera.x
             if 0 <= sy < curses.LINES-1 and 0 <= sx < curses.COLS:
                 stdscr.addch(sy, sx, char)
 
 
-def update_state(player: Player, camera: dict, ch: int, level: Level, enemies: List[Enemy]):
+def update_state(player: Player, camera: Point, ch: int, level: Level, enemies: List[Enemy]):
     new_x, new_y = player.proposed_position(ch) 
     # if enemy is within player's proposed position, reduce enemies hp
     for enemy in list(enemies):
@@ -55,7 +55,8 @@ def update_state(player: Player, camera: dict, ch: int, level: Level, enemies: L
             attack(player, enemy)
             if enemy.hp <= 0:
                 enemies.remove(enemy)
-            return
+            return camera
+        
 
     # if player is within bounds of the level, update the player's position
     if level.tile_at(new_x, new_y) != RoomObject.WALL.value:
@@ -66,11 +67,10 @@ def update_state(player: Player, camera: dict, ch: int, level: Level, enemies: L
         if enemy.hp <= 0:
             enemies.remove(enemy)
 
-    camera["x"] = player.x - curses.COLS // 2
-    camera["y"] = player.y - curses.LINES // 2
+    return camera._replace(x=player.x - curses.COLS // 2, y=player.y - curses.LINES // 2)
 
 
-def render(stdscr, player: Player, level: Level, camera: dict, enemies: List[Enemy]):
+def render(stdscr, player: Player, level: Level, camera: Point, enemies: List[Enemy]):
     stdscr.clear()
 
     drawLevel(stdscr, level, camera)
@@ -92,7 +92,7 @@ def start(stdscr):
     enemies: List[Enemy] = load_enemies(level)
 
     player = Player(level.player_start.get("x"), level.player_start.get("y"))
-    camera = {"x": player.x - curses.COLS // 2, "y": player.y - curses.LINES // 2}
+    camera = Point(player.x - curses.COLS // 2, player.y - curses.LINES // 2)
 
 
     render(stdscr, player, level, camera, enemies)
@@ -102,7 +102,7 @@ def start(stdscr):
         ch = stdscr.getch()
         if ch in (ord("Q"), ord("q")):
             break
-        update_state(player, camera, ch, level, enemies)
+        camera = update_state(player, camera, ch, level, enemies)
         render(stdscr, player, level, camera, enemies)
         if player.hp <= 0:
             stdscr.addstr(curses.LINES // 2, curses.COLS // 2 - 5, "Game Over!")

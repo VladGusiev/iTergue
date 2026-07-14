@@ -1,5 +1,9 @@
 from enum import Enum
+from typing import NamedTuple
 
+class Point(NamedTuple):
+    x: int
+    y: int
 
 class Direction(Enum):
     UP = ord("k")
