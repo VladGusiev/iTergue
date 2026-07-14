@@ -1,4 +1,4 @@
-from utils import RoomObject
+from utils import RoomObject, attack
 from Player import Player
 from Level import Level
 from collections import deque
@@ -42,7 +42,12 @@ class Enemy:
         while path[next_step] != enemy_pos:
             next_step = path[next_step]
 
-        self.x_coord, self.y_coord = next_step
+        if next_step == player_pos:
+            # damage if the enemy is adjacent to the player
+            attack(self, player)
+        else:
+            # move the enemy to the player's position
+            self.x_coord, self.y_coord = next_step
 
 
 

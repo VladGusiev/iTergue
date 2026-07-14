@@ -15,3 +15,9 @@ class RoomObject(Enum):
     # enemies signs
     SLIME = "s"
     ORC = "o"
+
+def attack(initiator, target):
+    target.hp -= initiator.damage
+    if target.hp > 0:
+        initiator.hp -= target.damage
+

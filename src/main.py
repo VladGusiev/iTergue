@@ -3,7 +3,8 @@ from curses import wrapper
 
 from Player import Player
 from Level import Level
-from utils import RoomObject
+from utils import RoomObject, attack
+
 
 from Enemy import Enemy
 
@@ -12,6 +13,10 @@ from typing import List
 
 def main():
     wrapper(start)
+
+def render_hud(stdscr, player: Player):
+    # Draw player stats
+    stdscr.addstr(curses.LINES - 2, 0, f"HP: {player.hp}  Damage: {player.damage}")
 
 def load_enemies(level: Level) -> List[Enemy]:
     # Load enemies from the level data
@@ -45,18 +50,21 @@ def drawLevel(stdscr, level: Level, camera: dict):
 def update_state(player: Player, camera: dict, ch: int, level: Level, enemies: List[Enemy]):
     new_x, new_y = player.proposed_position(ch) 
     # if enemy is within player's proposed position, reduce enemies hp
-    for enemy in enemies:
+    for enemy in list(enemies):
         if enemy.x_coord == new_x and enemy.y_coord == new_y:
-            enemy.hp -= player.damage
+            attack(player, enemy)
             if enemy.hp <= 0:
                 enemies.remove(enemy)
             return
+
     # if player is within bounds of the level, update the player's position
     if level.tile_at(new_x, new_y) != RoomObject.WALL.value:
         player.set_position(new_x, new_y)
 
     for enemy in enemies:
         enemy.move(player, level)
+        if enemy.hp <= 0:
+            enemies.remove(enemy)
 
     camera["x"] = player.x_coord - curses.COLS // 2
     camera["y"] = player.y_coord - curses.LINES // 2
@@ -72,6 +80,7 @@ def render(stdscr, player: Player, level: Level, camera: dict, enemies: List[Ene
     stdscr.addstr(curses.LINES // 2, curses.COLS // 2, player.display)
 
     # Draw information
+    render_hud(stdscr, player)
     stdscr.addstr(curses.LINES - 1, 0, "Press Q to quit")
     stdscr.refresh()
 
@@ -95,6 +104,11 @@ def start(stdscr):
             break
         update_state(player, camera, ch, level, enemies)
         render(stdscr, player, level, camera, enemies)
+        if player.hp <= 0:
+            stdscr.addstr(curses.LINES // 2, curses.COLS // 2 - 5, "Game Over!")
+            stdscr.refresh()
+            stdscr.getch()
+            break
         index += 1
 
 
