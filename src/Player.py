@@ -3,7 +3,7 @@ from utils import RoomObject
 
 from typing import List
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 @dataclass
 class Player:
@@ -12,6 +12,8 @@ class Player:
     hp: int = 100
     damage: int = 10
     display: str = RoomObject.PLAYER.value
+
+    inventory: List[str] = field(default_factory=list)
     
     def proposed_position(self, keycode: str) -> Point:
         if keycode == Direction.UP.value:

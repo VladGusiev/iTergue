@@ -1,6 +1,6 @@
 from utils import RoomObject, attack
-from Player import Player
-from Level import Level
+from player import Player
+from level import Level
 from collections import deque
 
 from dataclasses import dataclass

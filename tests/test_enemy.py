@@ -1,4 +1,4 @@
-from Enemy import Enemy
+from enemy import Enemy
 from utils import RoomObject
 
 def test_enemy_is_a_dataclass():
