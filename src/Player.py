@@ -1,7 +1,4 @@
-from utils import Direction, Point
-from utils import RoomObject
-
-from typing import List
+from utils import Direction, Point, RoomObject
 
 from dataclasses import dataclass, field
 
@@ -13,9 +10,9 @@ class Player:
     damage: int = 10
     display: str = RoomObject.PLAYER.value
 
-    inventory: List[str] = field(default_factory=list)
+    inventory: list[str] = field(default_factory=list)
     
-    def proposed_position(self, keycode: str) -> Point:
+    def proposed_position(self, keycode: int) -> Point:
         if keycode == Direction.UP.value:
             new_x = self.x
             new_y = self.y - 1
@@ -31,8 +28,8 @@ class Player:
         else:
             new_x = self.x
             new_y = self.y
-        return new_x, new_y
+        return Point(new_x, new_y)
 
-    def set_position(self, x: int, y: int):
+    def set_position(self, x: int, y: int) -> None:
         self.x = x
         self.y = y

@@ -5,22 +5,19 @@ from player import Player
 from level import Level
 from utils import Point, RoomObject, attack
 
-
 from enemy import Enemy
-
-from typing import List
 
 
 def main():
     wrapper(start)
 
-def render_hud(stdscr, player: Player):
+def render_hud(stdscr, player: Player) -> None:
     # Draw player stats
     stdscr.addstr(curses.LINES - 2, 0, f"HP: {player.hp}  Damage: {player.damage}")
 
-def load_enemies(level: Level) -> List[Enemy]:
+def load_enemies(level: Level) -> list[Enemy]:
     # Load enemies from the level data
-    enemies: List[Enemy] = []
+    enemies: list[Enemy] = []
     for enemy_data in level.enemies:
         enemy = Enemy(
             x=enemy_data.get("x", 0),
@@ -32,13 +29,13 @@ def load_enemies(level: Level) -> List[Enemy]:
         enemies.append(enemy)
     return enemies
 
-def render_enemies(stdscr, enemies: list, camera: Point):
+def render_enemies(stdscr, enemies: list[Enemy], camera: Point) -> None:
     for enemy in enemies:
         sy, sx = enemy.y - camera.y, enemy.x - camera.x
         if 0 <= sy < curses.LINES-1 and 0 <= sx < curses.COLS:
             stdscr.addch(sy, sx, enemy.display)
 
-def render_level(stdscr, level: Level, camera: Point):
+def render_level(stdscr, level: Level, camera: Point) -> None:
     for y in range(level.height):
         for x in range(level.width):
             char = level.tile_at(x, y)
@@ -47,7 +44,7 @@ def render_level(stdscr, level: Level, camera: Point):
                 stdscr.addch(sy, sx, char)
 
 
-def update_state(player: Player, ch: int, level: Level, enemies: List[Enemy]):
+def update_state(player: Player, ch: int, level: Level, enemies: list[Enemy]):
     new_x, new_y = player.proposed_position(ch) 
     # if enemy is within player's proposed position, reduce enemies hp
     for enemy in list(enemies):
@@ -68,7 +65,7 @@ def update_state(player: Player, ch: int, level: Level, enemies: List[Enemy]):
             enemies.remove(enemy)
 
 
-def render(stdscr, player: Player, level: Level, enemies: List[Enemy]):
+def render(stdscr, player: Player, level: Level, enemies: list[Enemy]):
     stdscr.clear()
 
     camera = Point(player.x - curses.COLS // 2, player.y - curses.LINES // 2)
@@ -88,7 +85,7 @@ def start(stdscr):
     curses.start_color()
 
     level: Level = Level("src/levels/level-1.json")
-    enemies: List[Enemy] = load_enemies(level)
+    enemies: list[Enemy] = load_enemies(level)
 
     player = Player(level.player_start.get("x"), level.player_start.get("y"))
 

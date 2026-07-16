@@ -2,7 +2,7 @@ import json
 
 class Level: 
     def __init__(self, path: str):
-        with open(path, 'r') as f:
+        with open(path) as f:
             data = json.load(f)
         self.width = len(data['tiles'][0])
         self.height = len(data['tiles'])

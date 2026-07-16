@@ -1,5 +1,11 @@
 from enum import Enum
-from typing import NamedTuple
+from typing import NamedTuple, Protocol, runtime_checkable
+
+
+@runtime_checkable
+class Combatant(Protocol):
+    hp: int
+    damage: int
 
 class Point(NamedTuple):
     x: int
@@ -20,7 +26,7 @@ class RoomObject(Enum):
     SLIME = "s"
     ORC = "o"
 
-def attack(initiator, target):
+def attack(initiator: Combatant, target: Combatant) -> None:
     target.hp -= initiator.damage
     if target.hp > 0:
         initiator.hp -= target.damage
