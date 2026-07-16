@@ -15,6 +15,8 @@ class Enemy:
 
 
     def move(self, player: Player, level: Level) -> None:
+        wall = RoomObject.WALL.value # caching 
+
         # BFS to find the player's position and move towards it
         enemy_pos = (self.x, self.y)
         player_pos = (player.x, player.y)
@@ -30,7 +32,7 @@ class Enemy:
             for delta_x, delta_y in ((0,1), (1,0), (0,-1), (-1,0)):
                 new_position = (current_x + delta_x, current_y + delta_y)
                 if new_position not in path and \
-                   level.tile_at(*new_position) != RoomObject.WALL.value:
+                   level.tile_at(*new_position) != wall:
                     coordinates.append(new_position)
                     path[new_position] = current_position
 

@@ -1,14 +1,26 @@
 import json
 
+class LevelError(Exception):
+    """Raised when a level file can't be loaded."""
+
+
 class Level: 
     def __init__(self, path: str):
-        with open(path) as f:
-            data = json.load(f)
-        self.width = len(data['tiles'][0])
-        self.height = len(data['tiles'])
-        self.player_start = data['player_start']
-        self.tiles = data['tiles']
-        self.enemies = data.get('enemies')
+        try:
+            with open(path) as f:
+                data = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            raise LevelError(f"Level file not found or invalid: {path}: {e}") from e
+        try:
+            self.tiles = data['tiles']
+            self.player_start = data['player_start']
+        except KeyError as e:
+            raise LevelError(f"Missing key in level data: {e}") from e
+
+        self.width = len(self.tiles[0])
+        self.height = len(self.tiles)
+        self.enemies = data.get('enemies', [])
+        
 
     def tile_at(self, x: int, y: int) -> str:
         if 0 <= x < self.width and 0 <= y < self.height:
