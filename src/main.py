@@ -1,4 +1,5 @@
 import curses
+import sys
 from curses import wrapper
 
 from player import Player
@@ -8,8 +9,12 @@ from utils import Point, RoomObject, attack
 from enemy import Enemy
 
 
-def main():
-    wrapper(start)
+def main() -> None:
+    try:
+        wrapper(start)
+    except LevelError as e:
+        print(f"Could not start iTergue: {e}", file=sys.stderr)
+        raise SystemExit(1) from e
 
 def render_hud(stdscr, player: Player) -> None:
     # Draw player stats
@@ -48,7 +53,7 @@ def render_level(stdscr, level: Level, camera: Point) -> None:
                 stdscr.addch(sy, sx, char)
 
 
-def update_state(player: Player, ch: int, level: Level, enemies: list[Enemy]):
+def update_state(player: Player, ch: int, level: Level, enemies: list[Enemy]) -> None:
     new_x, new_y = player.proposed_position(ch) 
     # if enemy is within player's proposed position, reduce enemies hp
     for enemy in list(enemies):
@@ -69,7 +74,7 @@ def update_state(player: Player, ch: int, level: Level, enemies: list[Enemy]):
             enemies.remove(enemy)
 
 
-def render(stdscr, player: Player, level: Level, enemies: list[Enemy]):
+def render(stdscr, player: Player, level: Level, enemies: list[Enemy]) -> None:
     stdscr.clear()
 
     camera = Point(player.x - curses.COLS // 2, player.y - curses.LINES // 2)
@@ -84,15 +89,15 @@ def render(stdscr, player: Player, level: Level, enemies: list[Enemy]):
     stdscr.addstr(curses.LINES - 1, 0, "Press Q to quit")
     stdscr.refresh()
 
-def start(stdscr):
+def start(stdscr) -> None:
     curses.curs_set(0)  # hide cursor
     curses.start_color()
 
     level: Level = Level("src/levels/level-1.json")
     enemies: list[Enemy] = load_enemies(level)
 
-    player = Player(level.player_start.get("x"), level.player_start.get("y"))
-
+    
+    player = Player(level.player_start.x, level.player_start.y)
 
     render(stdscr, player, level, enemies)
 

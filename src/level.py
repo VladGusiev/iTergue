@@ -1,5 +1,7 @@
 import json
 
+from utils import Point
+
 class LevelError(Exception):
     """Raised when a level file can't be loaded."""
 
@@ -13,7 +15,8 @@ class Level:
             raise LevelError(f"Level file not found or invalid: {path}: {e}") from e
         try:
             self.tiles = data['tiles']
-            self.player_start = data['player_start']
+            start = data['player_start']
+            self.player_start = Point(start['x'], start['y'])
         except KeyError as e:
             raise LevelError(f"Missing key in level data: {e}") from e
 
