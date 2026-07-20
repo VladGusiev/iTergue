@@ -22,7 +22,7 @@ class Enemy:
         player_pos = (player.x, player.y)
 
         coordinates = deque([enemy_pos])
-        path = {enemy_pos: None}
+        path = {enemy_pos: enemy_pos}
 
         while coordinates:
             current_position = coordinates.popleft()
