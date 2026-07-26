@@ -9,5 +9,3 @@ class Combatant(Protocol):
 
 def attack(initiator: Combatant, target: Combatant) -> None:
     target.hp -= initiator.damage
-    if target.hp > 0:
-        initiator.hp -= target.damage

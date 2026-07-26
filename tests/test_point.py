@@ -1,5 +1,6 @@
 from geometry import Point
 
+
 def test_point_is_named_tupe():
     p = Point(3, 7)
     assert p.x == 3

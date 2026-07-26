@@ -11,10 +11,10 @@ def test_remove_dead_filters_every_dead_enemy():
 
 
 def test_bump_attack_kills_enemy_and_player_holds(player, level):
-    enemies = [Enemy(x=6, y=5, hp=10)]          # directly right of player at (5, 5)
+    enemies = [Enemy(x=6, y=5, hp=10)]  # directly right of player at (5, 5)
     update_state(player, ord("l"), level, enemies)
-    assert enemies == []                         # killed: player dmg 10 == enemy hp 10
-    assert (player.x, player.y) == (5, 5)        # attacked, did not move
+    assert enemies == []  # killed: player dmg 10 == enemy hp 10
+    assert (player.x, player.y) == (5, 5)  # attacked, did not move
 
 
 def test_move_into_empty_floor(player, level):
@@ -23,6 +23,13 @@ def test_move_into_empty_floor(player, level):
 
 
 def test_wall_blocks_movement(level):
-    player = Player(x=1, y=1)                     # column x=0 is a wall
+    player = Player(x=1, y=1)  # column x=0 is a wall
     update_state(player, ord("h"), level, [])
     assert (player.x, player.y) == (1, 1)
+
+
+def test_second_enemy_attacks_after_first_enemy_dies(player, level):
+    enemies = [Enemy(x=6, y=5, hp=10, damage=3), Enemy(x=7, y=5, hp=10, damage=3)]
+    update_state(player, ord("l"), level, enemies)
+    assert len(enemies) == 1  # first enemy killed
+    assert player.hp == 100

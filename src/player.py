@@ -1,7 +1,8 @@
+from dataclasses import dataclass, field
+
 from geometry import Point
 from tiles import Direction, RoomObject
 
-from dataclasses import dataclass, field
 
 @dataclass
 class Player:
@@ -12,7 +13,7 @@ class Player:
     display: str = RoomObject.PLAYER.value
 
     inventory: list[str] = field(default_factory=list)
-    
+
     def proposed_position(self, keycode: int) -> Point:
         if keycode == Direction.UP.value:
             new_x = self.x

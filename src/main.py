@@ -27,23 +27,20 @@ def update_state(player: Player, ch: int, level: Level, enemies: list[Enemy]) ->
     target = player.proposed_position(ch)
 
     # Bump into an enemy on the target tile → attack instead of moving.
-    for enemy in enemies:
-        if enemy.x == target.x and enemy.y == target.y:
-            attack(player, enemy)
-            _remove_dead(enemies)
-            return
-
-    # Otherwise move, unless the target tile is a wall.
-    if level.tile_at(target.x, target.y) != RoomObject.WALL.value:
+    blocker = next((e for e in enemies if e.x == target.x and e.y == target.y), None)
+    if blocker is not None:
+        attack(player, blocker)
+        _remove_dead(enemies)
+    elif level.tile_at(target.x, target.y) != RoomObject.WALL.value:
         player.set_position(target.x, target.y)
 
-    # Enemies take their turn (they may die to a counter-attack).
-    for enemy in list(enemies):
+    # Enemies always take their turn
+    for enemy in enemies:
         enemy.move(player, level)
     _remove_dead(enemies)
 
 
-def start(stdscr) -> None:
+def start(stdscr: curses.window) -> None:
     curses.curs_set(0)  # hide cursor
     curses.start_color()
 
