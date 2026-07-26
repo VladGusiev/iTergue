@@ -1,7 +1,7 @@
 import pytest
 
 from player import Player
-from utils import Point
+from geometry import Point
 
 @pytest.mark.parametrize("keycode, expected", [
     (ord("k"), Point(5, 4)),   # UP

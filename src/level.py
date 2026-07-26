@@ -1,6 +1,6 @@
 import json
 
-from utils import Point
+from geometry import Point
 
 class LevelError(Exception):
     """Raised when a level file can't be loaded."""

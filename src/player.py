@@ -1,4 +1,5 @@
-from utils import Direction, Point, RoomObject
+from geometry import Point
+from tiles import Direction, RoomObject
 
 from dataclasses import dataclass, field
 

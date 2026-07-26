@@ -1,5 +1,5 @@
 from enemy import Enemy
-from utils import RoomObject
+from tiles import RoomObject
 
 def test_enemy_is_a_dataclass():
     enemy = Enemy(x=1, y=2, hp=10, damage=5, display=RoomObject.SLIME.value)

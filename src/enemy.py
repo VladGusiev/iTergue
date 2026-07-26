@@ -1,4 +1,5 @@
-from utils import RoomObject, attack
+from combat import attack
+from tiles import RoomObject
 from player import Player
 from level import Level
 from collections import deque

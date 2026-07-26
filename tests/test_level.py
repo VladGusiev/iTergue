@@ -1,6 +1,6 @@
 import pytest
 from level import Level, LevelError
-from main import load_enemies
+from entities import load_enemies
 
 
 def test_missing_level_rises_levele_rror():

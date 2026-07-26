@@ -1,4 +1,4 @@
-from utils import Point
+from geometry import Point
 
 def test_point_is_named_tupe():
     p = Point(3, 7)

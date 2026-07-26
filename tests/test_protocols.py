@@ -1,4 +1,4 @@
-from utils import Combatant, attack
+from combat import Combatant, attack
 from player import Player
 from enemy import Enemy
 
