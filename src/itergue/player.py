@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
-from geometry import Point
-from tiles import Direction, RoomObject
+from itergue.geometry import Point
+from itergue.tiles import Direction, RoomObject
 
 
 @dataclass

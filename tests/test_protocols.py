@@ -1,6 +1,6 @@
-from combat import Combatant, attack
-from enemy import Enemy
-from player import Player
+from itergue.combat import Combatant, attack
+from itergue.enemy import Enemy
+from itergue.player import Player
 
 
 def test_player_and_enemy_are_combatants():

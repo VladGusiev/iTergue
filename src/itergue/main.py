@@ -1,14 +1,17 @@
 import curses
 import sys
 from curses import wrapper
+from pathlib import Path
 
-from combat import attack
-from enemy import Enemy
-from entities import load_enemies
-from level import Level, LevelError
-from player import Player
-from render import render
-from tiles import RoomObject
+from itergue.combat import attack
+from itergue.enemy import Enemy
+from itergue.entities import load_enemies
+from itergue.level import Level, LevelError
+from itergue.player import Player
+from itergue.render import render
+from itergue.tiles import RoomObject
+
+LEVEL_DIR = Path(__file__).parent / "levels"
 
 
 def main() -> None:
@@ -44,7 +47,7 @@ def start(stdscr: curses.window) -> None:
     curses.curs_set(0)  # hide cursor
     curses.start_color()
 
-    level = Level("src/levels/level-1.json")
+    level = Level(LEVEL_DIR / "level-1.json")
     enemies = load_enemies(level)
     player = Player(level.player_start.x, level.player_start.y)
 
@@ -60,7 +63,3 @@ def start(stdscr: curses.window) -> None:
             stdscr.refresh()
             stdscr.getch()
             break
-
-
-if __name__ == "__main__":
-    main()

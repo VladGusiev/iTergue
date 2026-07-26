@@ -1,9 +1,9 @@
 import curses
 
-from enemy import Enemy
-from geometry import Point
-from level import Level
-from player import Player
+from itergue.enemy import Enemy
+from itergue.geometry import Point
+from itergue.level import Level
+from itergue.player import Player
 
 
 def render_hud(stdscr: curses.window, player: Player) -> None:

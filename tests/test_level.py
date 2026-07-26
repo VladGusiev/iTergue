@@ -1,8 +1,8 @@
 import pytest
 
-from entities import load_enemies
-from level import Level, LevelError
-from tiles import RoomObject
+from itergue.entities import load_enemies
+from itergue.level import Level, LevelError
+from itergue.tiles import RoomObject
 
 
 def test_missing_level_rises_levele_rror():

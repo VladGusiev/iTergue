@@ -1,7 +1,7 @@
 import pytest
 
-from geometry import Point
-from player import Player
+from itergue.geometry import Point
+from itergue.player import Player
 
 
 @pytest.mark.parametrize(

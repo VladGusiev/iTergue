@@ -1,8 +1,9 @@
 import json
+from pathlib import Path
 from typing import NotRequired, TypedDict
 
-from geometry import Point
-from tiles import RoomObject
+from itergue.geometry import Point
+from itergue.tiles import RoomObject
 
 
 class EnemySpecification(TypedDict):
@@ -18,7 +19,7 @@ class LevelError(Exception):
 
 
 class Level:
-    def __init__(self, path: str):
+    def __init__(self, path: str | Path):
         try:
             with open(path) as f:
                 data = json.load(f)

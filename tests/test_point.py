@@ -1,4 +1,4 @@
-from geometry import Point
+from itergue.geometry import Point
 
 
 def test_point_is_named_tupe():

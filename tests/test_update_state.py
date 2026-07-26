@@ -1,6 +1,6 @@
-from enemy import Enemy
-from main import _remove_dead, update_state
-from player import Player
+from itergue.enemy import Enemy
+from itergue.main import _remove_dead, update_state
+from itergue.player import Player
 
 
 def test_remove_dead_filters_every_dead_enemy():
@@ -33,6 +33,7 @@ def test_second_enemy_attacks_after_first_enemy_dies(player, level):
     update_state(player, ord("l"), level, enemies)
     assert len(enemies) == 1  # first enemy killed
     assert player.hp == 100
+
 
 def test_surviving_enemy_retaliates_once(player, level):
     enemies = [Enemy(x=6, y=5, hp=20, damage=3)]

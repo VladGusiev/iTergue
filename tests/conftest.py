@@ -2,8 +2,9 @@ import json
 
 import pytest
 
-from level import Level
-from player import Player
+from itergue.level import Level
+from itergue.main import LEVEL_DIR
+from itergue.player import Player
 
 
 @pytest.fixture
@@ -13,7 +14,7 @@ def player():
 
 @pytest.fixture
 def level():
-    return Level("src/levels/level-1.json")
+    return Level(LEVEL_DIR / "level-1.json")
 
 
 @pytest.fixture

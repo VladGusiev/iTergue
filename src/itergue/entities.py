@@ -1,6 +1,6 @@
-from enemy import Enemy
-from level import Level, LevelError
-from tiles import RoomObject
+from itergue.enemy import Enemy
+from itergue.level import Level, LevelError
+from itergue.tiles import RoomObject
 
 ENEMY_TYPES = {
     "SLIME": {"hp": 5, "damage": 5},

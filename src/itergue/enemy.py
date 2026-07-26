@@ -1,10 +1,10 @@
 from collections import deque
 from dataclasses import dataclass
 
-from combat import attack
-from level import Level
-from player import Player
-from tiles import RoomObject
+from itergue.combat import attack
+from itergue.level import Level
+from itergue.player import Player
+from itergue.tiles import RoomObject
 
 
 @dataclass
