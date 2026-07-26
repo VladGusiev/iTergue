@@ -33,3 +33,9 @@ def test_second_enemy_attacks_after_first_enemy_dies(player, level):
     update_state(player, ord("l"), level, enemies)
     assert len(enemies) == 1  # first enemy killed
     assert player.hp == 100
+
+def test_surviving_enemy_retaliates_once(player, level):
+    enemies = [Enemy(x=6, y=5, hp=20, damage=3)]
+    update_state(player, ord("l"), level, enemies)
+    assert enemies[0].hp == 10
+    assert player.hp == 97
