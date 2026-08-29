@@ -4,12 +4,13 @@ from curses import wrapper
 from pathlib import Path
 
 from itergue.combat import attack
+from itergue.controls import HELP, QUIT, SWAP
 from itergue.entities import load_enemies, load_items
 from itergue.game import Game, MessageKind
 from itergue.geometry import Point
 from itergue.level import Level, LevelError
 from itergue.player import Player
-from itergue.render import init_colors, render
+from itergue.render import init_colors, render, render_controls
 from itergue.tiles import RoomObject
 
 LEVEL_DIR = Path(__file__).parent / "levels"
@@ -23,9 +24,6 @@ def main() -> None:
         raise SystemExit(1) from e
 
 
-SWAP_KEYS = (ord("s"), ord("S"))  # trade the last slot for what you are standing on
-
-
 def update_state(game: Game, ch: int) -> None:
     player = game.player
     target = player.proposed_position(ch)
@@ -37,7 +35,7 @@ def update_state(game: Game, ch: int) -> None:
     if 0 <= slot < len(player.inventory):
         message = player.use(player.inventory.take(slot))
         game.log(message, kind=MessageKind.GOOD)
-    elif ch in SWAP_KEYS:
+    elif ch in SWAP.keys:
         take_from_the_floor(game, player.position)
     # Bump into an enemy on the target tile → attack instead of moving.
     elif blocker is not None:
@@ -86,8 +84,14 @@ def start(stdscr: curses.window) -> None:
     render(stdscr, game_instance)
     while True:
         ch = stdscr.getch()
-        if ch in (ord("Q"), ord("q")):
+        if ch in QUIT.keys:
             break
+        if ch in HELP.keys:
+            # Reading the controls is not a turn, so it never reaches update_state.
+            render_controls(stdscr)
+            stdscr.getch()
+            render(stdscr, game_instance)
+            continue
         update_state(game_instance, ch)
         render(stdscr, game_instance)
         if game_instance.player.hp <= 0:

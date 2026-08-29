@@ -1,6 +1,7 @@
 import curses
 from collections import deque
 
+from itergue.controls import CONTROLS, HELP, QUIT
 from itergue.enemy import Enemy
 from itergue.game import Game, Message, MessageKind
 from itergue.geometry import Point
@@ -11,6 +12,8 @@ from itergue.player import Player
 LOG_LINES = 3
 PANEL_LINES = LOG_LINES + 4  # separator, two HUD lines, and the quit line
 EMPTY_SLOT = "(empty)"
+FOOTER = f"Press {HELP.label} for controls, {QUIT.label.upper()} to quit"
+LABEL_WIDTH = max(len(control.label) for control in CONTROLS)
 
 MESSAGE_COLORS = {
     MessageKind.GOOD: curses.COLOR_GREEN,
@@ -81,6 +84,17 @@ def render_hud(stdscr: curses.window, player: Player) -> None:
     stdscr.addstr(curses.LINES - 2, 0, "   ".join(slots)[: curses.COLS - 1])
 
 
+def render_controls(stdscr: curses.window) -> None:
+    """Draw the key bindings over the whole screen. Caller waits for a keypress."""
+    stdscr.clear()
+    stdscr.addstr(0, 0, "Controls", curses.A_BOLD)
+    for row, control in enumerate(CONTROLS, start=2):
+        line = f"{control.label:<{LABEL_WIDTH}}  {control.description}"
+        stdscr.addstr(row, 2, line[: curses.COLS - 3])
+    stdscr.addstr(len(CONTROLS) + 3, 0, "Press any key to return")
+    stdscr.refresh()
+
+
 def render(stdscr: curses.window, game: Game) -> None:
     stdscr.clear()
 
@@ -98,6 +112,6 @@ def render(stdscr: curses.window, game: Game) -> None:
 
     render_messages(stdscr, game.messages, panel_top)
     stdscr.hline(panel_top + LOG_LINES, 0, curses.ACS_HLINE, curses.COLS)
-    stdscr.addstr(curses.LINES - 1, 0, "Press Q to quit")
+    stdscr.addstr(curses.LINES - 1, 0, FOOTER[: curses.COLS - 1])
     render_hud(stdscr, game.player)
     stdscr.refresh()
