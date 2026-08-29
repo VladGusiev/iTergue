@@ -5,10 +5,10 @@ from pathlib import Path
 
 from itergue.combat import attack
 from itergue.entities import load_enemies
-from itergue.game import Game
+from itergue.game import Game, MessageKind
 from itergue.level import Level, LevelError
 from itergue.player import Player
-from itergue.render import render
+from itergue.render import init_colors, render
 from itergue.tiles import RoomObject
 
 LEVEL_DIR = Path(__file__).parent / "levels"
@@ -31,9 +31,12 @@ def update_state(game: Game, ch: int) -> None:
     )
     if blocker is not None:
         attack(game.player, blocker)
-        game.log(f"You attack the {blocker.name} for {game.player.damage} damage!")
+        game.log(
+            f"You attack the {blocker.name} for {game.player.damage} damage!",
+            kind=MessageKind.GOOD,
+        )
         if blocker.hp <= 0:
-            game.log(f"The {blocker.name} dies!")
+            game.log(f"The {blocker.name} dies!", kind=MessageKind.GOOD)
         game.remove_dead_enemies()
     elif game.level.tile_at(target.x, target.y) != RoomObject.WALL.value:
         game.player.set_position(target.x, target.y)
@@ -41,12 +44,15 @@ def update_state(game: Game, ch: int) -> None:
     # Enemies always take their turn
     for enemy in game.enemies:
         if enemy.move(game.player, game.level):
-            game.log(f"The {enemy.name} attacks you for {enemy.damage} damage!")
+            game.log(
+                f"The {enemy.name} attacks you for {enemy.damage} damage!",
+                kind=MessageKind.BAD,
+            )
 
 
 def start(stdscr: curses.window) -> None:
     curses.curs_set(0)  # hide cursor
-    curses.start_color()
+    init_colors()  # set up color pairs for message kinds
 
     level = Level(LEVEL_DIR / "level-1.json")
     enemies = load_enemies(level)
@@ -63,7 +69,12 @@ def start(stdscr: curses.window) -> None:
         update_state(game_instance, ch)
         render(stdscr, game_instance)
         if game_instance.player.hp <= 0:
-            stdscr.addstr(curses.LINES // 2, curses.COLS // 2 - 5, "Game Over!")
+            stdscr.addstr(
+                curses.LINES // 2,
+                curses.COLS // 2 - 5,
+                "Game Over!",
+                curses.color_pair(1),
+            )
             stdscr.refresh()
             stdscr.getch()
             break

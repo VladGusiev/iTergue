@@ -1,7 +1,7 @@
 from collections import deque
 
 from itergue.enemy import Enemy
-from itergue.game import MESSAGE_LOG_SIZE, Game
+from itergue.game import MESSAGE_LOG_SIZE, Game, Message, MessageKind
 from itergue.main import update_state
 
 
@@ -9,15 +9,15 @@ def test_log_keeps_only_the_most_recent_messages(game):
     for turn in range(MESSAGE_LOG_SIZE + 3):
         game.log(f"turn {turn}")
     assert len(game.messages) == MESSAGE_LOG_SIZE
-    assert game.messages[0] == "turn 3"  # the first three fell off the front
-    assert game.messages[-1] == f"turn {MESSAGE_LOG_SIZE + 2}"
+    assert game.messages[0].text == "turn 3"  # the first three fell off the front
+    assert game.messages[-1].text == f"turn {MESSAGE_LOG_SIZE + 2}"
 
 
 def test_each_game_gets_its_own_log(level, player):
     first = Game(level=level, player=player, enemies=[])
     second = Game(level=level, player=player, enemies=[])
     first.log("only mine")
-    assert first.messages == deque(["only mine"])
+    assert first.messages == deque([Message("only mine", MessageKind.INFO)])
     assert second.messages == deque()
 
 
@@ -32,8 +32,8 @@ def test_hitting_a_survivor_logs_both_sides_of_the_exchange(game):
     game.enemies = [Enemy(name="orc", x=6, y=5, hp=20, damage=3)]
     update_state(game, ord("l"))
     assert list(game.messages) == [
-        "You attack the orc for 10 damage!",
-        "The orc attacks you for 3 damage!",
+        Message("You attack the orc for 10 damage!", MessageKind.GOOD),
+        Message("The orc attacks you for 3 damage!", MessageKind.BAD),
     ]
 
 
@@ -41,8 +41,8 @@ def test_killing_an_enemy_logs_its_death(game):
     game.enemies = [Enemy(name="slime", x=6, y=5, hp=10)]
     update_state(game, ord("l"))
     assert list(game.messages) == [
-        "You attack the slime for 10 damage!",
-        "The slime dies!",
+        Message("You attack the slime for 10 damage!", MessageKind.GOOD),
+        Message("The slime dies!", MessageKind.GOOD),
     ]
 
 

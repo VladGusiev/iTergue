@@ -2,13 +2,39 @@ import curses
 from collections import deque
 
 from itergue.enemy import Enemy
-from itergue.game import Game
+from itergue.game import Game, Message, MessageKind
 from itergue.geometry import Point
 from itergue.level import Level
 from itergue.player import Player
 
 LOG_LINES = 3
-PANEL_LINES = LOG_LINES + 2  # +2 for the HUD and the "Press Q to quit" line
+PANEL_LINES = LOG_LINES + 3  # +3 for the separator, the HUD and the quit line
+
+MESSAGE_COLORS = {
+    MessageKind.GOOD: curses.COLOR_GREEN,
+    MessageKind.BAD: curses.COLOR_RED,
+    MessageKind.INFO: curses.COLOR_WHITE,
+}
+# curses pair 0 is the terminal default and cannot be redefined, so start at 1.
+COLOR_PAIRS = {kind: number for number, kind in enumerate(MESSAGE_COLORS, start=1)}
+
+
+def init_colors() -> None:
+    """Register one curses color pair per message kind. Call after initscr()"""
+    curses.start_color()
+    curses.use_default_colors()
+    for kind, color in MESSAGE_COLORS.items():
+        curses.init_pair(COLOR_PAIRS[kind], color, -1)
+
+
+def render_messages(stdscr: curses.window, messages: deque[Message], top: int) -> None:
+    for row, message in enumerate(list(messages)[-LOG_LINES:]):
+        stdscr.addstr(
+            top + row,
+            0,
+            message.text[: curses.COLS - 1],
+            curses.color_pair(COLOR_PAIRS[message.kind]),
+        )
 
 
 def render_level(
@@ -30,12 +56,6 @@ def render_enemies(
             stdscr.addch(sy, sx, enemy.display)
 
 
-def render_messages(stdscr: curses.window, messages: deque[str]) -> None:
-    top = curses.LINES - PANEL_LINES
-    for row, message in enumerate(list(messages)[-LOG_LINES:]):
-        stdscr.addstr(top + row, 0, message[: curses.COLS - 1])  # truncate if too long
-
-
 def render_hud(stdscr: curses.window, player: Player) -> None:
     stdscr.addstr(curses.LINES - 2, 0, f"HP: {player.hp}  Damage: {player.damage}")
 
@@ -45,15 +65,16 @@ def render(stdscr: curses.window, game: Game) -> None:
 
     # The camera is the world position of the top-left map cell. Everything on the
     # map — including the player — is drawn through it, so nothing can drift apart.
-    map_height = curses.LINES - PANEL_LINES
+    panel_top = curses.LINES - PANEL_LINES
     player = game.player
-    camera = Point(player.x - curses.COLS // 2, player.y - map_height // 2)
+    camera = Point(player.x - curses.COLS // 2, player.y - panel_top // 2)
 
-    render_level(stdscr, game.level, camera, map_height)
-    render_enemies(stdscr, game.enemies, camera, map_height)
+    render_level(stdscr, game.level, camera, panel_top)
+    render_enemies(stdscr, game.enemies, camera, panel_top)
     stdscr.addstr(player.y - camera.y, player.x - camera.x, player.display)
 
-    render_messages(stdscr, game.messages)
-    render_hud(stdscr, game.player)
+    render_messages(stdscr, game.messages, panel_top)
+    stdscr.hline(panel_top + LOG_LINES, 0, curses.ACS_HLINE, curses.COLS)
     stdscr.addstr(curses.LINES - 1, 0, "Press Q to quit")
+    render_hud(stdscr, game.player)
     stdscr.refresh()
