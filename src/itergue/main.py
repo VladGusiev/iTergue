@@ -4,9 +4,8 @@ from curses import wrapper
 from pathlib import Path
 
 from itergue.combat import attack
-from itergue.entities import load_enemies
+from itergue.entities import load_enemies, load_items
 from itergue.game import Game, MessageKind
-from itergue.geometry import Point
 from itergue.level import Level, LevelError
 from itergue.player import Player
 from itergue.render import init_colors, render
@@ -24,7 +23,14 @@ def main() -> None:
 
 
 def update_state(game: Game, ch: int) -> None:
-    target = game.player.proposed_position(ch)
+    player = game.player
+    target = player.proposed_position(ch)
+    slot = ch - ord("1")  # keys 1-9 use an inventory slot
+
+    # Use an item from the inventory if a number key was pressed
+    if 0 <= slot < len(player.inventory):
+        message = player.use(player.inventory.pop(slot))
+        game.log(message, kind=MessageKind.GOOD)
 
     # Bump into an enemy on the target tile → attack instead of moving.
     blocker = next((e for e in game.enemies if e.position == target), None)
@@ -38,7 +44,11 @@ def update_state(game: Game, ch: int) -> None:
             game.log(f"The {blocker.name} dies!", kind=MessageKind.GOOD)
         game.remove_dead_enemies()
     elif game.level.tile_at(target.x, target.y) != RoomObject.WALL.value:
-        game.player.set_position(Point(target))
+        game.player.set_position(target)
+        picked_up = game.take_item(target)
+        if picked_up is not None:
+            player.inventory.append(picked_up)
+            game.log(f"You pick up the {picked_up.name}.", kind=MessageKind.GOOD)
 
     # Enemies always take their turn
     for enemy in game.enemies:
@@ -55,9 +65,10 @@ def start(stdscr: curses.window) -> None:
 
     level = Level(LEVEL_DIR / "level-1.json")
     enemies = load_enemies(level)
+    items = load_items(level)
     player = Player(position=level.player_start)
 
-    game_instance = Game(level=level, player=player, enemies=enemies)
+    game_instance = Game(level=level, player=player, enemies=enemies, floor_items=items)
     game_instance.log("Your journey begins!")
 
     render(stdscr, game_instance)

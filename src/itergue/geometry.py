@@ -11,3 +11,6 @@ class Point:
 
     def __sub__(self, other: Point) -> Point:
         return Point(self.x - other.x, self.y - other.y)
+
+
+NEIGHBOURS = (Point(0, 1), Point(1, 0), Point(0, -1), Point(-1, 0))

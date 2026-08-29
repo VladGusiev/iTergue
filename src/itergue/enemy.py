@@ -7,7 +7,7 @@ from itergue.level import Level
 from itergue.player import Player
 from itergue.tiles import RoomObject
 
-NEIGHBOURS = (Point(0, 1), Point(1, 0), Point(0, -1), Point(-1, 0))
+WALL = RoomObject.WALL.value  # caching
 
 
 @dataclass
@@ -23,8 +23,6 @@ class Enemy:
 
         Returns True if it attacked instead of moving.
         """
-        wall = RoomObject.WALL.value  # caching
-
         # BFS to find the player's position and move towards it
         enemy_pos = self.position
         player_pos = player.position
@@ -36,14 +34,10 @@ class Enemy:
             current_position = coordinates.popleft()
             if current_position == player_pos:
                 break
-            for delta in NEIGHBOURS:
-                neighbour = current_position + delta
-                if (
-                    neighbour not in path
-                    and level.tile_at(neighbour.x, neighbour.y) != wall
-                ):
-                    coordinates.append(neighbour)
+            for neighbour in level.walkable_neighbours(current_position):
+                if neighbour not in path:
                     path[neighbour] = current_position
+                    coordinates.append(neighbour)
 
         if player_pos not in path:
             return False  # No path to player

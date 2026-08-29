@@ -1,6 +1,7 @@
 import pytest
 
 from itergue.entities import load_enemies
+from itergue.geometry import Point
 from itergue.level import Level, LevelError
 from itergue.tiles import RoomObject
 
@@ -59,3 +60,43 @@ def test_malformed_tiles_raise_level_error(write_level, tiles, message):
 def test_tile_at_treats_off_map_as_wall(level):
     assert level.tile_at(-1, 0) == RoomObject.WALL.value
     assert level.tile_at(level.width, level.height) == RoomObject.WALL.value
+
+
+def test_cells_yields_every_tile_with_its_position(write_level):
+    level = Level(
+        write_level({"tiles": ["#.", ".#"], "player_start": {"x": 0, "y": 0}})
+    )
+    assert list(level.cells()) == [
+        (Point(0, 0), "#"),
+        (Point(1, 0), "."),
+        (Point(0, 1), "."),
+        (Point(1, 1), "#"),
+    ]
+
+
+def test_cells_is_lazy(write_level):
+    level = Level(
+        write_level({"tiles": ["..", ".."], "player_start": {"x": 0, "y": 0}})
+    )
+    cells = level.cells()
+    assert next(cells) == (Point(0, 0), ".")
+    level.tiles[1] = "##"  # changed after the generator was handed out
+    assert list(cells)[-1] == (Point(1, 1), "#")  # and the generator still sees it
+
+
+def test_cells_is_one_shot(level):
+    cells = level.cells()
+    assert sum(1 for _ in cells) == level.width * level.height
+    assert sum(1 for _ in cells) == 0  # exhausted, and it will not say so
+
+
+def test_walkable_neighbours_skips_walls(write_level):
+    level = Level(
+        write_level({"tiles": ["###", "...", "###"], "player_start": {"x": 0, "y": 0}})
+    )
+    assert set(level.walkable_neighbours(Point(1, 1))) == {Point(0, 1), Point(2, 1)}
+
+
+def test_walkable_neighbours_treats_off_map_as_wall(write_level):
+    level = Level(write_level({"tiles": [".."], "player_start": {"x": 0, "y": 0}}))
+    assert set(level.walkable_neighbours(Point(0, 0))) == {Point(1, 0)}

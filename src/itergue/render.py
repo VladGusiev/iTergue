@@ -4,11 +4,13 @@ from collections import deque
 from itergue.enemy import Enemy
 from itergue.game import Game, Message, MessageKind
 from itergue.geometry import Point
+from itergue.items import EquipSlot, Item
 from itergue.level import Level
 from itergue.player import Player
 
 LOG_LINES = 3
-PANEL_LINES = LOG_LINES + 3  # +3 for the separator, the HUD and the quit line
+PANEL_LINES = LOG_LINES + 4  # separator, two HUD lines, and the quit line
+EMPTY_SLOT = "(empty)"
 
 MESSAGE_COLORS = {
     MessageKind.GOOD: curses.COLOR_GREEN,
@@ -40,11 +42,19 @@ def render_messages(stdscr: curses.window, messages: deque[Message], top: int) -
 def render_level(
     stdscr: curses.window, level: Level, camera: Point, height: int
 ) -> None:
-    for y in range(level.height):
-        for x in range(level.width):
-            screen = Point(x, y) - camera
-            if 0 <= screen.y < height and 0 <= screen.x < curses.COLS:
-                stdscr.addch(screen.y, screen.x, level.tile_at(x, y))
+    for point, tile in level.cells():
+        screen = point - camera
+        if 0 <= screen.y < height and 0 <= screen.x < curses.COLS:
+            stdscr.addch(screen.y, screen.x, tile)
+
+
+def render_items(
+    stdscr: curses.window, items: dict[Point, Item], camera: Point, height: int
+) -> None:
+    for point, item in items.items():
+        screen = point - camera
+        if 0 <= screen.y < height and 0 <= screen.x < curses.COLS:
+            stdscr.addch(screen.y, screen.x, item.display)
 
 
 def render_enemies(
@@ -57,7 +67,18 @@ def render_enemies(
 
 
 def render_hud(stdscr: curses.window, player: Player) -> None:
-    stdscr.addstr(curses.LINES - 2, 0, f"HP: {player.hp}  Damage: {player.damage}")
+    carried = "  ".join(
+        f"{number}:{item.display}{item.name}"
+        for number, item in enumerate(player.inventory, start=1)
+    )
+    slots = []
+    for slot in EquipSlot:
+        item = player.equipment.get(slot)
+        slots.append(f"{slot.value}: {item.name if item else EMPTY_SLOT}")
+
+    stats = f"HP: {player.hp}  Damage: {player.damage}  Carried: {carried}"
+    stdscr.addstr(curses.LINES - 3, 0, stats[: curses.COLS - 1])
+    stdscr.addstr(curses.LINES - 2, 0, "   ".join(slots)[: curses.COLS - 1])
 
 
 def render(stdscr: curses.window, game: Game) -> None:
@@ -70,6 +91,7 @@ def render(stdscr: curses.window, game: Game) -> None:
     camera = player.position - Point(curses.COLS // 2, panel_top // 2)
 
     render_level(stdscr, game.level, camera, panel_top)
+    render_items(stdscr, game.floor_items, camera, panel_top)
     render_enemies(stdscr, game.enemies, camera, panel_top)
     screen = player.position - camera
     stdscr.addstr(screen.y, screen.x, player.display)

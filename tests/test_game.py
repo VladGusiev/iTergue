@@ -1,6 +1,7 @@
 from collections import deque
 
 from itergue.enemy import Enemy
+from itergue.entities import ITEM_TYPES
 from itergue.game import MESSAGE_LOG_SIZE, Game, Message, MessageKind
 from itergue.geometry import Point
 from itergue.main import update_state
@@ -54,3 +55,22 @@ def test_killing_an_enemy_logs_its_death(game):
 def test_a_quiet_turn_logs_nothing(game):
     update_state(game, ord("l"))
     assert list(game.messages) == []
+
+
+def test_take_item_removes_it_from_the_floor(game):
+    potion = ITEM_TYPES["SMALL_HEALTH_POTION"]
+    game.floor_items = {Point(3, 4): potion}
+
+    assert game.take_item(Point(3, 4)) is potion
+    assert game.take_item(Point(3, 4)) is None  # it was only there once
+
+
+def test_take_item_on_a_bare_tile_returns_none(game):
+    assert game.take_item(Point(3, 4)) is None
+
+
+def test_each_game_gets_its_own_floor(level, player):
+    first = Game(level=level, player=player, enemies=[])
+    second = Game(level=level, player=player, enemies=[])
+    first.floor_items[Point(1, 1)] = ITEM_TYPES["DULL_SWORD"]
+    assert second.floor_items == {}

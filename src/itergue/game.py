@@ -4,6 +4,8 @@ from enum import Enum, auto
 from typing import NamedTuple
 
 from itergue.enemy import Enemy
+from itergue.geometry import Point
+from itergue.items import Item
 from itergue.level import Level
 from itergue.player import Player
 
@@ -29,6 +31,10 @@ class Game:
     messages: deque[Message] = field(
         default_factory=lambda: deque(maxlen=MESSAGE_LOG_SIZE)
     )
+    floor_items: dict[Point, Item] = field(default_factory=dict)
+
+    def take_item(self, point: Point) -> Item | None:
+        return self.floor_items.pop(point, None)
 
     def log(self, message: str, kind: MessageKind = MessageKind.INFO) -> None:
         self.messages.append(Message(text=message, kind=kind))
