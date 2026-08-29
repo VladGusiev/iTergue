@@ -1,7 +1,7 @@
 from itergue.combat import Stats
 from itergue.enemy import Enemy
 from itergue.geometry import Point
-from itergue.items import Item, Potion, Weapon
+from itergue.items import Armor, Item, Potion, Weapon
 from itergue.level import Level, LevelError
 from itergue.tiles import RoomObject
 
@@ -13,6 +13,7 @@ ENEMY_TYPES = {
 ITEM_TYPES: dict[str, Item] = {
     "SMALL_HEALTH_POTION": Potion(name="Small Health Potion", display="!", heal=20),
     "DULL_SWORD": Weapon(name="Dull Sword", display="/", bonus=Stats(damage=5)),
+    "RUSTY_ARMOR": Armor(name="Rusty Armor", display="[", bonus=Stats(defence=3)),
 }
 
 

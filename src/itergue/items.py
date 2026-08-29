@@ -12,10 +12,19 @@ class EquipSlot(Enum):
 
 
 @dataclass(frozen=True, slots=True)
+class Armor:
+    name: str
+    display: str
+    bonus: Stats
+    slot = EquipSlot.ARMOR
+
+
+@dataclass(frozen=True, slots=True)
 class Weapon:
     name: str
     display: str
     bonus: Stats
+    slot = EquipSlot.WEAPON
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,4 +34,5 @@ class Potion:
     heal: int
 
 
-Item = Weapon | Potion
+Equippable = Weapon | Armor
+Item = Equippable | Potion

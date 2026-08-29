@@ -1,6 +1,7 @@
 from itergue.enemy import Enemy
 from itergue.entities import ITEM_TYPES
 from itergue.geometry import Point
+from itergue.inventory import Inventory
 from itergue.main import update_state
 from itergue.player import Player
 
@@ -51,7 +52,7 @@ def test_walking_onto_an_item_picks_it_up(game):
 
     update_state(game, ord("l"))
 
-    assert game.player.inventory == [potion]
+    assert list(game.player.inventory) == [potion]
     assert game.floor_items == {}  # taken from the floor, not copied
     assert "pick up" in game.messages[-1].text
 
@@ -68,30 +69,30 @@ def test_walking_onto_an_item_does_not_use_it(game):
 def test_walking_past_an_item_leaves_it_alone(game):
     game.floor_items = {Point(9, 9): ITEM_TYPES["SMALL_HEALTH_POTION"]}
     update_state(game, ord("l"))
-    assert game.player.inventory == []
+    assert list(game.player.inventory) == []
     assert len(game.floor_items) == 1
 
 
 def test_a_slot_key_uses_that_item(game):
     game.player.hp = 50
-    game.player.inventory = [ITEM_TYPES["SMALL_HEALTH_POTION"]]
+    game.player.inventory.add(ITEM_TYPES["SMALL_HEALTH_POTION"])
 
     update_state(game, ord("1"))
 
     assert game.player.hp == 70
-    assert game.player.inventory == []  # consumed
+    assert list(game.player.inventory) == []  # consumed
     assert game.player.position == Point(5, 5)  # using an item is not a move
 
 
 def test_a_slot_key_for_an_empty_slot_does_nothing(game):
     update_state(game, ord("1"))
-    assert game.player.inventory == []
+    assert list(game.player.inventory) == []
     assert list(game.messages) == []
 
 
 def test_enemies_still_take_their_turn_when_you_use_an_item(game):
     # Regression: an early return here used to hand every enemy a free pass.
-    game.player.inventory = [ITEM_TYPES["SMALL_HEALTH_POTION"]]
+    game.player.inventory.add(ITEM_TYPES["SMALL_HEALTH_POTION"])
     game.enemies = [Enemy(name="orc", position=Point(6, 5), damage=3)]
 
     update_state(game, ord("1"))
@@ -100,10 +101,78 @@ def test_enemies_still_take_their_turn_when_you_use_an_item(game):
 
 
 def test_equipping_from_the_bag_raises_the_damage_you_attack_with(game):
-    game.player.inventory = [ITEM_TYPES["DULL_SWORD"]]
+    game.player.inventory.add(ITEM_TYPES["DULL_SWORD"])
     game.enemies = [Enemy(name="orc", position=Point(6, 5), hp=50, damage=0)]
 
     update_state(game, ord("1"))  # wield
     update_state(game, ord("l"))  # attack
 
     assert game.enemies[0].hp == 35  # 50 - (10 base + 5 sword)
+
+
+def test_a_full_pack_leaves_the_item_on_the_floor(game):
+    # Walking is free. A full pack refuses the item and costs you nothing,
+    # so you never lose a slot by crossing a tile you did not care about.
+    sword = ITEM_TYPES["DULL_SWORD"]
+    game.player.inventory = Inventory(
+        capacity=1, items=[ITEM_TYPES["SMALL_HEALTH_POTION"]]
+    )
+    game.floor_items = {Point(6, 5): sword}
+
+    update_state(game, ord("l"))
+
+    assert "no room" in game.messages[-1].text
+    assert game.floor_items == {Point(6, 5): sword}  # still there to come back for
+    assert sword not in game.player.inventory
+
+
+def test_s_swaps_the_last_slot_for_what_you_are_standing_on(game):
+    potion, sword = ITEM_TYPES["SMALL_HEALTH_POTION"], ITEM_TYPES["DULL_SWORD"]
+    armor = ITEM_TYPES["RUSTY_ARMOR"]
+    game.player.inventory = Inventory(capacity=2, items=[potion, sword])
+    game.floor_items = {Point(6, 5): armor}
+
+    update_state(game, ord("l"))  # step on it, pack is full, it stays put
+    update_state(game, ord("s"))  # now ask for the trade
+
+    assert list(game.player.inventory) == [potion, armor]  # last slot, not the first
+    assert game.floor_items == {Point(6, 5): sword}  # traded, not destroyed
+    assert "swap" in game.messages[-1].text
+
+
+def test_s_on_a_bare_tile_says_so(game):
+    update_state(game, ord("s"))
+    assert "nothing here" in game.messages[-1].text
+    assert list(game.player.inventory) == []
+
+
+def test_s_just_picks_up_when_there_is_room(game):
+    # Reachable after drinking a potion frees a slot while you stand on an item.
+    armor = ITEM_TYPES["RUSTY_ARMOR"]
+    game.floor_items = {Point(5, 5): armor}  # under the player
+
+    update_state(game, ord("s"))
+
+    assert list(game.player.inventory) == [armor]
+    assert game.floor_items == {}
+    assert "pick up" in game.messages[-1].text
+
+
+def test_s_does_not_move_you_or_skip_the_enemy_turn(game):
+    game.player.inventory = Inventory(capacity=1, items=[ITEM_TYPES["DULL_SWORD"]])
+    game.floor_items = {Point(5, 5): ITEM_TYPES["RUSTY_ARMOR"]}
+    game.enemies = [Enemy(name="orc", position=Point(6, 5), damage=4)]
+
+    update_state(game, ord("s"))
+
+    assert game.player.position == Point(5, 5)  # swapping is not a move
+    assert game.player.hp == 96  # the orc still got its turn
+
+
+def test_armor_from_the_bag_soaks_damage(game):
+    game.player.inventory.add(ITEM_TYPES["RUSTY_ARMOR"])  # defence 3
+    game.enemies = [Enemy(name="orc", position=Point(6, 5), hp=50, damage=10)]
+
+    update_state(game, ord("1"))  # wear it, and the orc gets its turn
+
+    assert game.player.hp == 93  # 100 - max(1, 10 - 3)

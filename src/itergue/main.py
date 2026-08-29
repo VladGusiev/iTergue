@@ -6,6 +6,7 @@ from pathlib import Path
 from itergue.combat import attack
 from itergue.entities import load_enemies, load_items
 from itergue.game import Game, MessageKind
+from itergue.geometry import Point
 from itergue.level import Level, LevelError
 from itergue.player import Player
 from itergue.render import init_colors, render
@@ -22,19 +23,24 @@ def main() -> None:
         raise SystemExit(1) from e
 
 
+SWAP_KEYS = (ord("s"), ord("S"))  # trade the last slot for what you are standing on
+
+
 def update_state(game: Game, ch: int) -> None:
     player = game.player
     target = player.proposed_position(ch)
     slot = ch - ord("1")  # keys 1-9 use an inventory slot
-
-    # Use an item from the inventory if a number key was pressed
-    if 0 <= slot < len(player.inventory):
-        message = player.use(player.inventory.pop(slot))
-        game.log(message, kind=MessageKind.GOOD)
-
-    # Bump into an enemy on the target tile → attack instead of moving.
     blocker = next((e for e in game.enemies if e.position == target), None)
-    if blocker is not None:
+
+    # Use an item from the inventory if a number key was pressed and
+    # remove it from the inventory
+    if 0 <= slot < len(player.inventory):
+        message = player.use(player.inventory.take(slot))
+        game.log(message, kind=MessageKind.GOOD)
+    elif ch in SWAP_KEYS:
+        take_from_the_floor(game, player.position)
+    # Bump into an enemy on the target tile → attack instead of moving.
+    elif blocker is not None:
         attack(game.player, blocker)
         game.log(
             f"You attack the {blocker.name} for {game.player.damage} damage!",
@@ -47,8 +53,14 @@ def update_state(game: Game, ch: int) -> None:
         game.player.set_position(target)
         picked_up = game.take_item(target)
         if picked_up is not None:
-            player.inventory.append(picked_up)
-            game.log(f"You pick up the {picked_up.name}.", kind=MessageKind.GOOD)
+            if player.inventory.add(picked_up):
+                game.log(f"You pick up the {picked_up.name}.", kind=MessageKind.GOOD)
+            else:
+                game.floor_items[target] = picked_up  # no room: leave it lying there
+                game.log(
+                    f"You have no room for the {picked_up.name}. Press s to swap.",
+                    kind=MessageKind.BAD,
+                )
 
     # Enemies always take their turn
     for enemy in game.enemies:
@@ -88,3 +100,19 @@ def start(stdscr: curses.window) -> None:
             stdscr.refresh()
             stdscr.getch()
             break
+
+
+def take_from_the_floor(game: Game, position: Point) -> None:
+    """Pick up what is under the player, trading the last slot if the pack is full."""
+    item = game.take_item(position)
+    if item is None:
+        game.log("There is nothing here to pick up.", kind=MessageKind.INFO)
+    elif game.player.inventory.add(item):
+        game.log(f"You pick up the {item.name}.", kind=MessageKind.GOOD)
+    else:
+        dropped = game.player.inventory.take(-1)
+        game.player.inventory.add(item)  # a slot just opened, so this holds
+        game.floor_items[position] = dropped
+        game.log(
+            f"You swap the {dropped.name} for the {item.name}.", kind=MessageKind.INFO
+        )

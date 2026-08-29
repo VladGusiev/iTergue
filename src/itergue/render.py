@@ -73,7 +73,7 @@ def render_hud(stdscr: curses.window, player: Player) -> None:
     )
     slots = []
     for slot in EquipSlot:
-        item = player.equipment.get(slot)
+        item = player.equipment[slot]
         slots.append(f"{slot.value}: {item.name if item else EMPTY_SLOT}")
 
     stats = f"HP: {player.hp}  Damage: {player.damage}  Carried: {carried}"

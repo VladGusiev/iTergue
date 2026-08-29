@@ -16,6 +16,7 @@ class Enemy:
     position: Point = Point(0, 0)
     hp: int = 10
     damage: int = 5
+    defence: int = 0
     display: str = RoomObject.SLIME.value
 
     def move(self, player: Player, level: Level) -> bool:

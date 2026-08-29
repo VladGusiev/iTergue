@@ -22,6 +22,10 @@ class Combatant(Protocol):
     def damage(self) -> int:
         """Read-only property that returns the damage this combatant can deal."""
 
+    @property
+    def defence(self) -> int:
+        """Read-only property that returns the defence this combatant has."""
+
 
 def attack(initiator: Combatant, target: Combatant) -> None:
-    target.hp -= initiator.damage
+    target.hp -= max(1, initiator.damage - target.defence)
