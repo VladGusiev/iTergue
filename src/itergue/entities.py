@@ -19,6 +19,7 @@ def load_enemies(level: Level) -> list[Enemy]:
             raise LevelError(f"Invalid enemy type: {type_enemy}") from e
         enemies.append(
             Enemy(
+                name=type_enemy.lower(),
                 x=enemy_data.get("x", 0),
                 y=enemy_data.get("y", 0),
                 display=display,

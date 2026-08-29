@@ -4,8 +4,8 @@ from curses import wrapper
 from pathlib import Path
 
 from itergue.combat import attack
-from itergue.enemy import Enemy
 from itergue.entities import load_enemies
+from itergue.game import Game
 from itergue.level import Level, LevelError
 from itergue.player import Player
 from itergue.render import render
@@ -22,25 +22,26 @@ def main() -> None:
         raise SystemExit(1) from e
 
 
-def _remove_dead(enemies: list[Enemy]) -> None:
-    enemies[:] = [enemy for enemy in enemies if enemy.hp > 0]
-
-
-def update_state(player: Player, ch: int, level: Level, enemies: list[Enemy]) -> None:
-    target = player.proposed_position(ch)
+def update_state(game: Game, ch: int) -> None:
+    target = game.player.proposed_position(ch)
 
     # Bump into an enemy on the target tile → attack instead of moving.
-    blocker = next((e for e in enemies if e.x == target.x and e.y == target.y), None)
+    blocker = next(
+        (e for e in game.enemies if e.x == target.x and e.y == target.y), None
+    )
     if blocker is not None:
-        attack(player, blocker)
-        _remove_dead(enemies)
-    elif level.tile_at(target.x, target.y) != RoomObject.WALL.value:
-        player.set_position(target.x, target.y)
+        attack(game.player, blocker)
+        game.log(f"You attack the {blocker.name} for {game.player.damage} damage!")
+        if blocker.hp <= 0:
+            game.log(f"The {blocker.name} dies!")
+        game.remove_dead_enemies()
+    elif game.level.tile_at(target.x, target.y) != RoomObject.WALL.value:
+        game.player.set_position(target.x, target.y)
 
     # Enemies always take their turn
-    for enemy in enemies:
-        enemy.move(player, level)
-    _remove_dead(enemies)
+    for enemy in game.enemies:
+        if enemy.move(game.player, game.level):
+            game.log(f"The {enemy.name} attacks you for {enemy.damage} damage!")
 
 
 def start(stdscr: curses.window) -> None:
@@ -51,14 +52,17 @@ def start(stdscr: curses.window) -> None:
     enemies = load_enemies(level)
     player = Player(level.player_start.x, level.player_start.y)
 
-    render(stdscr, player, level, enemies)
+    game_instance = Game(level=level, player=player, enemies=enemies)
+    game_instance.log("Your journey begins!")
+
+    render(stdscr, game_instance)
     while True:
         ch = stdscr.getch()
         if ch in (ord("Q"), ord("q")):
             break
-        update_state(player, ch, level, enemies)
-        render(stdscr, player, level, enemies)
-        if player.hp <= 0:
+        update_state(game_instance, ch)
+        render(stdscr, game_instance)
+        if game_instance.player.hp <= 0:
             stdscr.addstr(curses.LINES // 2, curses.COLS // 2 - 5, "Game Over!")
             stdscr.refresh()
             stdscr.getch()

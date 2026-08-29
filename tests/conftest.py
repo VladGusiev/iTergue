@@ -2,9 +2,15 @@ import json
 
 import pytest
 
+from itergue.game import Game
 from itergue.level import Level
 from itergue.main import LEVEL_DIR
 from itergue.player import Player
+
+
+@pytest.fixture
+def game(level, player):
+    return Game(level=level, player=player, enemies=[])
 
 
 @pytest.fixture

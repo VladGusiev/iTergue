@@ -9,13 +9,18 @@ from itergue.tiles import RoomObject
 
 @dataclass
 class Enemy:
+    name: str = "enemy"
     x: int = 0
     y: int = 0
     hp: int = 10
     damage: int = 5
     display: str = RoomObject.SLIME.value
 
-    def move(self, player: Player, level: Level) -> None:
+    def move(self, player: Player, level: Level) -> bool:
+        """Step one tile toward the player, or attack if already adjacent.
+
+        Returns True if it attacked instead of moving.
+        """
         wall = RoomObject.WALL.value  # caching
 
         # BFS to find the player's position and move towards it
@@ -37,7 +42,7 @@ class Enemy:
                     path[new_position] = current_position
 
         if player_pos not in path:
-            return  # No path to player
+            return False  # No path to player
 
         next_step = player_pos
         while path[next_step] != enemy_pos:
@@ -46,6 +51,7 @@ class Enemy:
         if next_step == player_pos:
             # damage if the enemy is adjacent to the player
             attack(self, player)
-        else:
-            # move the enemy to the player's position
-            self.x, self.y = next_step
+            return True
+        # move the enemy to the player's position
+        self.x, self.y = next_step
+        return False

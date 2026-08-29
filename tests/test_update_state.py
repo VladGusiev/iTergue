@@ -1,42 +1,35 @@
 from itergue.enemy import Enemy
-from itergue.main import _remove_dead, update_state
+from itergue.main import update_state
 from itergue.player import Player
 
 
-def test_remove_dead_filters_every_dead_enemy():
-    # Regression: removing while iterating used to skip an enemy after a removed one.
-    enemies = [Enemy(x=1, y=1, hp=0), Enemy(x=2, y=2, hp=0), Enemy(x=3, y=3, hp=5)]
-    _remove_dead(enemies)
-    assert [e.hp for e in enemies] == [5]
+def test_bump_attack_kills_enemy_and_player_holds(game):
+    game.enemies = [Enemy(x=6, y=5, hp=10)]  # directly right of player at (5, 5)
+    update_state(game, ord("l"))
+    assert game.enemies == []  # killed: player dmg 10 == enemy hp 10
+    assert (game.player.x, game.player.y) == (5, 5)  # attacked, did not move
 
 
-def test_bump_attack_kills_enemy_and_player_holds(player, level):
-    enemies = [Enemy(x=6, y=5, hp=10)]  # directly right of player at (5, 5)
-    update_state(player, ord("l"), level, enemies)
-    assert enemies == []  # killed: player dmg 10 == enemy hp 10
-    assert (player.x, player.y) == (5, 5)  # attacked, did not move
+def test_move_into_empty_floor(game):
+    update_state(game, ord("l"))
+    assert (game.player.x, game.player.y) == (6, 5)
 
 
-def test_move_into_empty_floor(player, level):
-    update_state(player, ord("l"), level, [])
-    assert (player.x, player.y) == (6, 5)
+def test_wall_blocks_movement(game):
+    game.player = Player(x=1, y=1)  # column x=0 is a wall
+    update_state(game, ord("h"))
+    assert (game.player.x, game.player.y) == (1, 1)
 
 
-def test_wall_blocks_movement(level):
-    player = Player(x=1, y=1)  # column x=0 is a wall
-    update_state(player, ord("h"), level, [])
-    assert (player.x, player.y) == (1, 1)
+def test_second_enemy_attacks_after_first_enemy_dies(game):
+    game.enemies = [Enemy(x=6, y=5, hp=10, damage=3), Enemy(x=7, y=5, hp=10, damage=3)]
+    update_state(game, ord("l"))
+    assert len(game.enemies) == 1  # first enemy killed
+    assert game.player.hp == 100
 
 
-def test_second_enemy_attacks_after_first_enemy_dies(player, level):
-    enemies = [Enemy(x=6, y=5, hp=10, damage=3), Enemy(x=7, y=5, hp=10, damage=3)]
-    update_state(player, ord("l"), level, enemies)
-    assert len(enemies) == 1  # first enemy killed
-    assert player.hp == 100
-
-
-def test_surviving_enemy_retaliates_once(player, level):
-    enemies = [Enemy(x=6, y=5, hp=20, damage=3)]
-    update_state(player, ord("l"), level, enemies)
-    assert enemies[0].hp == 10
-    assert player.hp == 97
+def test_surviving_enemy_retaliates_once(game):
+    game.enemies = [Enemy(x=6, y=5, hp=20, damage=3)]
+    update_state(game, ord("l"))
+    assert game.enemies[0].hp == 10
+    assert game.player.hp == 97
