@@ -42,18 +42,18 @@ def render_level(
 ) -> None:
     for y in range(level.height):
         for x in range(level.width):
-            sy, sx = y - camera.y, x - camera.x
-            if 0 <= sy < height and 0 <= sx < curses.COLS:
-                stdscr.addch(sy, sx, level.tile_at(x, y))
+            screen = Point(x, y) - camera
+            if 0 <= screen.y < height and 0 <= screen.x < curses.COLS:
+                stdscr.addch(screen.y, screen.x, level.tile_at(x, y))
 
 
 def render_enemies(
     stdscr: curses.window, enemies: list[Enemy], camera: Point, height: int
 ) -> None:
     for enemy in enemies:
-        sy, sx = enemy.y - camera.y, enemy.x - camera.x
-        if 0 <= sy < height and 0 <= sx < curses.COLS:
-            stdscr.addch(sy, sx, enemy.display)
+        screen = enemy.position - camera
+        if 0 <= screen.y < height and 0 <= screen.x < curses.COLS:
+            stdscr.addch(screen.y, screen.x, enemy.display)
 
 
 def render_hud(stdscr: curses.window, player: Player) -> None:
@@ -67,11 +67,12 @@ def render(stdscr: curses.window, game: Game) -> None:
     # map — including the player — is drawn through it, so nothing can drift apart.
     panel_top = curses.LINES - PANEL_LINES
     player = game.player
-    camera = Point(player.x - curses.COLS // 2, player.y - panel_top // 2)
+    camera = player.position - Point(curses.COLS // 2, panel_top // 2)
 
     render_level(stdscr, game.level, camera, panel_top)
     render_enemies(stdscr, game.enemies, camera, panel_top)
-    stdscr.addstr(player.y - camera.y, player.x - camera.x, player.display)
+    screen = player.position - camera
+    stdscr.addstr(screen.y, screen.x, player.display)
 
     render_messages(stdscr, game.messages, panel_top)
     stdscr.hline(panel_top + LOG_LINES, 0, curses.ACS_HLINE, curses.COLS)

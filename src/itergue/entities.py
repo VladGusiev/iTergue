@@ -1,4 +1,5 @@
 from itergue.enemy import Enemy
+from itergue.geometry import Point
 from itergue.level import Level, LevelError
 from itergue.tiles import RoomObject
 
@@ -20,8 +21,7 @@ def load_enemies(level: Level) -> list[Enemy]:
         enemies.append(
             Enemy(
                 name=type_enemy.lower(),
-                x=enemy_data.get("x", 0),
-                y=enemy_data.get("y", 0),
+                position=Point(enemy_data.get("x", 0), enemy_data.get("y", 0)),
                 display=display,
                 hp=enemy_data.get("hp", stats["hp"]),
                 damage=enemy_data.get("damage", stats["damage"]),

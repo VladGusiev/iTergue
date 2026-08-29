@@ -3,6 +3,7 @@ import json
 import pytest
 
 from itergue.game import Game
+from itergue.geometry import Point
 from itergue.level import Level
 from itergue.main import LEVEL_DIR
 from itergue.player import Player
@@ -15,7 +16,7 @@ def game(level, player):
 
 @pytest.fixture
 def player():
-    return Player(x=5, y=5)
+    return Player(position=Point(5, 5))
 
 
 @pytest.fixture

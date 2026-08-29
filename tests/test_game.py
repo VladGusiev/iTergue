@@ -2,6 +2,7 @@ from collections import deque
 
 from itergue.enemy import Enemy
 from itergue.game import MESSAGE_LOG_SIZE, Game, Message, MessageKind
+from itergue.geometry import Point
 from itergue.main import update_state
 
 
@@ -23,13 +24,17 @@ def test_each_game_gets_its_own_log(level, player):
 
 def test_remove_dead_enemies_filters_every_corpse(game):
     # Regression: removing while iterating used to skip an enemy after a removed one.
-    game.enemies = [Enemy(x=1, y=1, hp=0), Enemy(x=2, y=2, hp=0), Enemy(x=3, y=3, hp=5)]
+    game.enemies = [
+        Enemy(position=Point(1, 1), hp=0),
+        Enemy(position=Point(2, 2), hp=0),
+        Enemy(position=Point(3, 3), hp=5),
+    ]
     game.remove_dead_enemies()
     assert [enemy.hp for enemy in game.enemies] == [5]
 
 
 def test_hitting_a_survivor_logs_both_sides_of_the_exchange(game):
-    game.enemies = [Enemy(name="orc", x=6, y=5, hp=20, damage=3)]
+    game.enemies = [Enemy(name="orc", position=Point(6, 5), hp=20, damage=3)]
     update_state(game, ord("l"))
     assert list(game.messages) == [
         Message("You attack the orc for 10 damage!", MessageKind.GOOD),
@@ -38,7 +43,7 @@ def test_hitting_a_survivor_logs_both_sides_of_the_exchange(game):
 
 
 def test_killing_an_enemy_logs_its_death(game):
-    game.enemies = [Enemy(name="slime", x=6, y=5, hp=10)]
+    game.enemies = [Enemy(name="slime", position=Point(6, 5), hp=10)]
     update_state(game, ord("l"))
     assert list(game.messages) == [
         Message("You attack the slime for 10 damage!", MessageKind.GOOD),

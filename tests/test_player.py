@@ -20,9 +20,14 @@ def test_proposed_position_return_point(player, keycode, expected):
     assert result == expected
 
 
+def test_proposed_position_does_not_move_the_player(player):
+    player.proposed_position(ord("l"))
+    assert player.position == Point(5, 5)  # it proposes, it does not commit
+
+
 def test_players_does_not_share_inventory():
-    player1 = Player(x=0, y=0)
-    player2 = Player(x=0, y=0)
+    player1 = Player()
+    player2 = Player()
     player1.inventory.append("sword")
     assert player1.inventory == ["sword"]
     assert player2.inventory == []

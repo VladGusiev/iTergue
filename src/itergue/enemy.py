@@ -2,16 +2,18 @@ from collections import deque
 from dataclasses import dataclass
 
 from itergue.combat import attack
+from itergue.geometry import Point
 from itergue.level import Level
 from itergue.player import Player
 from itergue.tiles import RoomObject
+
+NEIGHBOURS = (Point(0, 1), Point(1, 0), Point(0, -1), Point(-1, 0))
 
 
 @dataclass
 class Enemy:
     name: str = "enemy"
-    x: int = 0
-    y: int = 0
+    position: Point = Point(0, 0)
     hp: int = 10
     damage: int = 5
     display: str = RoomObject.SLIME.value
@@ -24,8 +26,8 @@ class Enemy:
         wall = RoomObject.WALL.value  # caching
 
         # BFS to find the player's position and move towards it
-        enemy_pos = (self.x, self.y)
-        player_pos = (player.x, player.y)
+        enemy_pos = self.position
+        player_pos = player.position
 
         coordinates = deque([enemy_pos])
         path = {enemy_pos: enemy_pos}
@@ -34,12 +36,14 @@ class Enemy:
             current_position = coordinates.popleft()
             if current_position == player_pos:
                 break
-            current_x, current_y = current_position
-            for delta_x, delta_y in ((0, 1), (1, 0), (0, -1), (-1, 0)):
-                new_position = (current_x + delta_x, current_y + delta_y)
-                if new_position not in path and level.tile_at(*new_position) != wall:
-                    coordinates.append(new_position)
-                    path[new_position] = current_position
+            for delta in NEIGHBOURS:
+                neighbour = current_position + delta
+                if (
+                    neighbour not in path
+                    and level.tile_at(neighbour.x, neighbour.y) != wall
+                ):
+                    coordinates.append(neighbour)
+                    path[neighbour] = current_position
 
         if player_pos not in path:
             return False  # No path to player
@@ -53,5 +57,5 @@ class Enemy:
             attack(self, player)
             return True
         # move the enemy to the player's position
-        self.x, self.y = next_step
+        self.position = next_step
         return False

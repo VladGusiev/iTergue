@@ -3,11 +3,17 @@ from dataclasses import dataclass, field
 from itergue.geometry import Point
 from itergue.tiles import Direction, RoomObject
 
+MOVES = {
+    Direction.UP: Point(0, -1),
+    Direction.RIGHT: Point(1, 0),
+    Direction.DOWN: Point(0, 1),
+    Direction.LEFT: Point(-1, 0),
+}
+
 
 @dataclass
 class Player:
-    x: int
-    y: int
+    position: Point = Point(0, 0)
     hp: int = 100
     damage: int = 10
     display: str = RoomObject.PLAYER.value
@@ -15,23 +21,10 @@ class Player:
     inventory: list[str] = field(default_factory=list)
 
     def proposed_position(self, keycode: int) -> Point:
-        if keycode == Direction.UP.value:
-            new_x = self.x
-            new_y = self.y - 1
-        elif keycode == Direction.RIGHT.value:
-            new_x = self.x + 1
-            new_y = self.y
-        elif keycode == Direction.DOWN.value:
-            new_x = self.x
-            new_y = self.y + 1
-        elif keycode == Direction.LEFT.value:
-            new_x = self.x - 1
-            new_y = self.y
-        else:
-            new_x = self.x
-            new_y = self.y
-        return Point(new_x, new_y)
+        try:
+            return self.position + MOVES[Direction(keycode)]
+        except ValueError:
+            return self.position  # not a movement key
 
-    def set_position(self, x: int, y: int) -> None:
-        self.x = x
-        self.y = y
+    def set_position(self, position: Point) -> None:
+        self.position = position

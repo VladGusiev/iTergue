@@ -6,6 +6,7 @@ from pathlib import Path
 from itergue.combat import attack
 from itergue.entities import load_enemies
 from itergue.game import Game, MessageKind
+from itergue.geometry import Point
 from itergue.level import Level, LevelError
 from itergue.player import Player
 from itergue.render import init_colors, render
@@ -26,9 +27,7 @@ def update_state(game: Game, ch: int) -> None:
     target = game.player.proposed_position(ch)
 
     # Bump into an enemy on the target tile → attack instead of moving.
-    blocker = next(
-        (e for e in game.enemies if e.x == target.x and e.y == target.y), None
-    )
+    blocker = next((e for e in game.enemies if e.position == target), None)
     if blocker is not None:
         attack(game.player, blocker)
         game.log(
@@ -39,7 +38,7 @@ def update_state(game: Game, ch: int) -> None:
             game.log(f"The {blocker.name} dies!", kind=MessageKind.GOOD)
         game.remove_dead_enemies()
     elif game.level.tile_at(target.x, target.y) != RoomObject.WALL.value:
-        game.player.set_position(target.x, target.y)
+        game.player.set_position(Point(target))
 
     # Enemies always take their turn
     for enemy in game.enemies:
@@ -56,7 +55,7 @@ def start(stdscr: curses.window) -> None:
 
     level = Level(LEVEL_DIR / "level-1.json")
     enemies = load_enemies(level)
-    player = Player(level.player_start.x, level.player_start.y)
+    player = Player(position=level.player_start)
 
     game_instance = Game(level=level, player=player, enemies=enemies)
     game_instance.log("Your journey begins!")
