@@ -7,7 +7,10 @@
   "items": [
     { "type": "SMALL_HEALTH_POTION", "x": 10, "y": 10 },
     { "type": "DULL_SWORD", "x": 15, "y": 15 },
-    { "type": "RUSTY_ARMOR", "x": 3, "y": 2 }
+    { "type": "RUSTY_ARMOR", "x": 3, "y": 2 },
+    { "type": "RESTING_SPELL", "x": 25, "y": 5 },
+    { "type": "CHEST_KEY", "x": 35, "y": 10 },
+    { "type": "MAGIC_STONE", "x": 5, "y": 15 }
   ],
   "tiles": [
     "########################################",

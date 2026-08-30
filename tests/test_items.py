@@ -58,7 +58,31 @@ def test_slot_is_fixed_per_class_and_not_a_constructor_argument():
 
 
 def test_the_type_table_carries_one_of_each_kind():
-    from itergue.items import Armor, Potion, Weapon
+    from typing import get_args
+
+    from itergue.items import Item
 
     kinds = {type(item) for item in ITEM_TYPES.values()}
-    assert kinds == {Potion, Weapon, Armor}
+    # Reading the union means a new item kind fails here until the table has one,
+    # instead of this list going stale every time Item grows.
+    assert kinds == set(get_args(Item))
+
+
+def test_a_potion_and_a_spell_are_consumable_without_inheriting_anything():
+    from itergue.items import Consumable, Potion, Spell
+
+    assert isinstance(ITEM_TYPES["SMALL_HEALTH_POTION"], Consumable)
+    assert isinstance(ITEM_TYPES["RESTING_SPELL"], Consumable)
+    # Structural, not nominal: neither class has Consumable anywhere above it.
+    assert Consumable not in Potion.__mro__
+    assert Consumable not in Spell.__mro__
+
+
+def test_the_equippable_union_is_exactly_the_two_slot_types():
+    from typing import get_args
+
+    from itergue.items import Armor, Equippable, EquipSlot, Weapon
+
+    # The closed axis, pinned. A third slot has to grow both of these together.
+    assert get_args(Equippable) == (Weapon, Armor)
+    assert len(EquipSlot) == 2

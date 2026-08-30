@@ -33,7 +33,7 @@ def update_state(game: Game, ch: int) -> None:
     # Use an item from the inventory if a number key was pressed and
     # remove it from the inventory
     if 0 <= slot < len(player.inventory):
-        message = player.use(player.inventory.take(slot))
+        message = player.use(slot)
         game.log(message, kind=MessageKind.GOOD)
     elif ch in SWAP.keys:
         take_from_the_floor(game, player.position)

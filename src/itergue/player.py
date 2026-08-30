@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from itergue.combat import Stats
 from itergue.geometry import Point
 from itergue.inventory import Equipment, Inventory
-from itergue.items import Item, Potion
+from itergue.items import Armor, Consumable, Weapon
 from itergue.tiles import Direction, RoomObject
 
 MOVES = {
@@ -16,6 +16,7 @@ MOVES = {
 
 @dataclass
 class Player:
+    name: str = "Kyle"
     position: Point = Point(0, 0)
     hp: int = 100
     base: Stats = Stats(damage=10)
@@ -45,14 +46,13 @@ class Player:
     def set_position(self, position: Point) -> None:
         self.position = position
 
-    def use(self, item: Item) -> str:
+    def use(self, index: int) -> str:
         """Apply a carried item. Returns a line to log"""
-        if isinstance(item, Potion):
-            self.hp += item.heal
-            return f"You used {item.name} and healed {item.heal} HP."
-
-        displaced = self.equipment.equip(item)
-        if displaced is not None:
-            # The caller just took `item` out of the bag, so there is room
-            self.inventory.add(displaced)
-        return f"You equipped {item.name} in the {item.slot.name} slot."
+        item = self.inventory[index]
+        if isinstance(item, Consumable):
+            self.inventory.take(index)
+            return item.consume(self)
+        if isinstance(item, Weapon | Armor):
+            self.inventory.replace(index, self.equipment.equip(item))
+            return f"You equipped {item.name} in the {item.slot.name} slot."
+        return f"You cannot use {item.name} on its own."

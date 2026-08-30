@@ -1,3 +1,5 @@
+import dataclasses
+
 import pytest
 
 from itergue.combat import Stats
@@ -47,17 +49,17 @@ def test_damage_is_the_base_until_something_is_equipped(player):
     assert player.damage == player.base.damage == 10
 
 
-def test_using_a_potion_heals_the_player():
+def test_using_a_potion_heals_the_player(use):
     player = Player(hp=50)
-    message = player.use(Potion(name="tonic", display="!", heal=20))
+    message = use(player, Potion(name="tonic", display="!", heal=20))
     assert player.hp == 70
     assert "tonic" in message
 
 
-def test_equipping_a_weapon_raises_damage_without_storing_it(player):
+def test_equipping_a_weapon_raises_damage_without_storing_it(player, use):
     axe = Weapon(name="axe", display="/", bonus=Stats(damage=15))
 
-    message = player.use(axe)
+    message = use(player, axe)
 
     assert player.equipment[EquipSlot.WEAPON] is axe
     assert player.equipment[EquipSlot.ARMOR] is None  # the other slot is untouched
@@ -66,39 +68,75 @@ def test_equipping_a_weapon_raises_damage_without_storing_it(player):
     assert "axe" in message
 
 
-def test_unequipping_restores_the_base_damage(player):
-    player.use(Weapon(name="axe", display="/", bonus=Stats(damage=15)))
+def test_unequipping_restores_the_base_damage(player, use):
+    use(player, Weapon(name="axe", display="/", bonus=Stats(damage=15)))
     # ponytail: no unequip verb yet, so reach into worn. Add Equipment.unequip
     # when something in the game actually takes a weapon off.
     player.equipment.worn.clear()
     assert player.damage == 10  # nothing to undo, because nothing was overwritten
 
 
-def test_equipping_a_second_weapon_replaces_the_first(player):
+def test_equipping_a_second_weapon_replaces_the_first(player, use):
     axe = Weapon(name="axe", display="/", bonus=Stats(damage=15))
     dagger = Weapon(name="dagger", display="/", bonus=Stats(damage=3))
-    player.use(axe)
-    player.use(dagger)
+    use(player, axe)
+    use(player, dagger)
     assert player.damage == 13  # one slot, so bonuses replace and do not stack
 
 
-def test_the_weapon_you_replace_goes_back_into_the_bag(player):
+def test_the_weapon_you_replace_goes_back_into_the_bag(player, use):
     axe = Weapon(name="axe", display="/", bonus=Stats(damage=15))
-    player.use(axe)
-    player.use(Weapon(name="dagger", display="/", bonus=Stats(damage=3)))
+    use(player, axe)
+    use(player, Weapon(name="dagger", display="/", bonus=Stats(damage=3)))
     assert list(player.inventory) == [axe]  # swapped out, not destroyed
 
 
-def test_stats_sum_over_every_filled_slot(player):
-    player.use(Weapon(name="axe", display="/", bonus=Stats(damage=15)))
-    player.use(Armor(name="plate", display="[", bonus=Stats(defence=7)))
+def test_stats_sum_over_every_filled_slot(player, use):
+    use(player, Weapon(name="axe", display="/", bonus=Stats(damage=15)))
+    use(player, Armor(name="plate", display="[", bonus=Stats(defence=7)))
     assert player.stats == Stats(damage=25, defence=7)
     assert player.damage == 25 and player.defence == 7  # both read the same sum
 
 
-def test_a_potion_does_not_touch_damage_and_a_weapon_does_not_touch_hp(player):
+def test_a_potion_does_not_touch_damage_and_a_weapon_does_not_touch_hp(player, use):
     player.hp = 50
-    player.use(Potion(name="tonic", display="!", heal=20))
+    use(player, Potion(name="tonic", display="!", heal=20))
     assert player.damage == 10
-    player.use(Weapon(name="axe", display="/", bonus=Stats(damage=15)))
+    use(player, Weapon(name="axe", display="/", bonus=Stats(damage=15)))
     assert player.hp == 70
+
+
+def test_an_item_with_no_verb_stays_in_the_bag(player, use):
+    from itergue.items import Key, StoryItem
+
+    for item in (
+        Key(name="brass key", display="k"),
+        StoryItem(name="page", display="*"),
+    ):
+        message = use(player, item)
+        assert item in player.inventory  # a designed no-op must not eat the item
+        assert item.name in message
+
+    assert len(player.inventory) == 2
+
+
+def test_a_new_consumable_needs_no_production_code():
+    """The extensibility bar: a verb is open, so growing one touches nothing in src/."""
+
+    @dataclasses.dataclass(frozen=True, slots=True)
+    class Bandage:
+        name: str = "bandage"
+        display: str = "+"
+
+        def consume(self, target) -> str:
+            target.hp += 5
+            return f"{target.name} binds a wound for 5 HP."
+
+    player = Player(name="Kyle", hp=50)
+    # ty is right to refuse the add: Item is a closed union and Bandage is not in
+    # it. Dispatch is structural, but the container it has to sit in is not.
+    player.inventory.add(Bandage())  # ty: ignore[invalid-argument-type]
+
+    assert player.use(0) == "Kyle binds a wound for 5 HP."
+    assert player.hp == 55
+    assert len(player.inventory) == 0  # consumed, so the slot is freed

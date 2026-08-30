@@ -15,6 +15,17 @@ def game(level, player):
 
 
 @pytest.fixture
+def use():
+    """Player.use takes a slot, so put the item in the bag and use that slot."""
+
+    def _use(owner: Player, item) -> str:
+        owner.inventory.add(item)
+        return owner.use(len(owner.inventory) - 1)
+
+    return _use
+
+
+@pytest.fixture
 def player():
     return Player(position=Point(5, 5))
 

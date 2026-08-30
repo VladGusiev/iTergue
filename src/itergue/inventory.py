@@ -35,6 +35,13 @@ class Inventory:
     def take(self, index: int) -> Item:
         return self.items.pop(index)
 
+    def replace(self, index: int, item: Item | None) -> None:
+        """Put item in the slot. None empties the slot."""
+        if item is None:
+            del self.items[index]
+        else:
+            self.items[index] = item
+
 
 @dataclass
 class Equipment:

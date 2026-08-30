@@ -16,6 +16,7 @@ class Stats:
 
 @runtime_checkable
 class Combatant(Protocol):
+    name: str
     hp: int
 
     @property
