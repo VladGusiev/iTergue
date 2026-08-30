@@ -86,3 +86,58 @@ def test_the_equippable_union_is_exactly_the_two_slot_types():
     # The closed axis, pinned. A third slot has to grow both of these together.
     assert get_args(Equippable) == (Weapon, Armor)
     assert len(EquipSlot) == 2
+
+
+def test_the_table_is_a_definition_and_a_cast_never_touches_it():
+    from itergue.items import Spell
+    from itergue.player import Player
+
+    definition = ITEM_TYPES["RESTING_SPELL"]
+    hero = Player(hp=50)
+    hero.inventory.add(definition)
+    hero.use(0, turn=0)
+    carried = hero.inventory[0]
+
+    # ITEM_TYPES is dict[str, Item], so reading a Spell field needs the narrowing
+    # assert. In a test that is documentation, not ceremony.
+    assert isinstance(definition, Spell) and isinstance(carried, Spell)
+    assert definition.ready_at == 0  # the table is a definition, not a carrier
+    assert carried.ready_at == 3
+    assert carried is not definition
+
+
+def test_two_carriers_of_one_definition_have_their_own_clocks():
+    from itergue.player import Player
+
+    hero, rival = Player(name="Kyle", hp=50), Player(name="Rival", hp=50)
+    for carrier in (hero, rival):
+        carrier.inventory.add(ITEM_TYPES["RESTING_SPELL"])
+
+    hero.use(0, turn=0)
+    assert "cooldown" in hero.use(0, turn=1).text
+    assert "healed" in rival.use(0, turn=1).text  # one definition, separate clocks
+
+
+def test_the_cooldown_blocks_then_expires():
+    from itergue.player import Player
+
+    hero = Player(hp=50)
+    hero.inventory.add(ITEM_TYPES["RESTING_SPELL"])
+
+    assert "healed" in hero.use(0, turn=0).text
+    assert "cooldown" in hero.use(0, turn=2).text
+    assert "healed" in hero.use(0, turn=3).text  # ready_at == 0 + cooldown
+
+
+def test_a_potion_is_spent_and_a_spell_is_only_unavailable():
+    from itergue.player import Player
+
+    hero = Player(hp=50)
+    hero.inventory.add(ITEM_TYPES["SMALL_HEALTH_POTION"])
+    hero.inventory.add(ITEM_TYPES["RESTING_SPELL"])
+
+    hero.use(0, turn=0)  # the potion is gone, so the spell shifts into slot 0
+    assert len(hero.inventory) == 1
+
+    hero.use(0, turn=0)  # a cast leaves the spell where it is
+    assert len(hero.inventory) == 1

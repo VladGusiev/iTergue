@@ -6,9 +6,10 @@ from pathlib import Path
 from itergue.combat import attack
 from itergue.controls import HELP, QUIT, SWAP
 from itergue.entities import load_enemies, load_items
-from itergue.game import Game, MessageKind
+from itergue.game import Game
 from itergue.geometry import Point
 from itergue.level import Level, LevelError
+from itergue.messages import MessageKind
 from itergue.player import Player
 from itergue.render import init_colors, render, render_controls
 from itergue.tiles import RoomObject
@@ -33,8 +34,8 @@ def update_state(game: Game, ch: int) -> None:
     # Use an item from the inventory if a number key was pressed and
     # remove it from the inventory
     if 0 <= slot < len(player.inventory):
-        message = player.use(slot)
-        game.log(message, kind=MessageKind.GOOD)
+        message = player.use(slot, game.turn)
+        game.log(message.text, kind=message.kind)
     elif ch in SWAP.keys:
         take_from_the_floor(game, player.position)
     # Bump into an enemy on the target tile → attack instead of moving.
@@ -60,6 +61,7 @@ def update_state(game: Game, ch: int) -> None:
                     kind=MessageKind.BAD,
                 )
 
+    game.turn += 1
     # Enemies always take their turn
     for enemy in game.enemies:
         if enemy.move(game.player, game.level):

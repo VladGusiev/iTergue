@@ -3,10 +3,11 @@ from collections import deque
 
 from itergue.controls import CONTROLS, HELP, QUIT
 from itergue.enemy import Enemy
-from itergue.game import Game, Message, MessageKind
+from itergue.game import Game
 from itergue.geometry import Point
 from itergue.items import EquipSlot, Item
 from itergue.level import Level
+from itergue.messages import Message, MessageKind
 from itergue.player import Player
 
 LOG_LINES = 3

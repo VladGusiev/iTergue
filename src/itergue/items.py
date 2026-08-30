@@ -44,6 +44,8 @@ class Potion:
 class Spell:
     name: str
     display: str
+    cooldown: int
+    ready_at: int
 
     def consume(self, target: Combatant) -> str:
         """Apply the item's effect to the target. Returns a line to log."""
@@ -79,3 +81,15 @@ class Consumable(Protocol):
     def consume(self, target: Combatant) -> str:
         """Apply the item's effect to the target. Returns a line to log."""
         ...
+
+
+@runtime_checkable
+class Cooldownable(Protocol):
+    """An item that has a cooldown before it can be used again."""
+
+    # Properties, not bare annotations: `cooldown: int` claims a writable attribute,
+    # and every item is frozen, so no real item can satisfy it.
+    @property
+    def cooldown(self) -> int: ...
+    @property
+    def ready_at(self) -> int: ...

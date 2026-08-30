@@ -1,26 +1,14 @@
 from collections import deque
 from dataclasses import dataclass, field
-from enum import Enum, auto
-from typing import NamedTuple
 
 from itergue.enemy import Enemy
 from itergue.geometry import Point
 from itergue.items import Item
 from itergue.level import Level
+from itergue.messages import Message, MessageKind
 from itergue.player import Player
 
 MESSAGE_LOG_SIZE = 5
-
-
-class MessageKind(Enum):
-    INFO = auto()  # informational message, like where did you arrive
-    BAD = auto()  # something bad happened to the player like taking damage
-    GOOD = auto()  # player did something good, like killing an enemy
-
-
-class Message(NamedTuple):
-    text: str
-    kind: MessageKind = MessageKind.INFO
 
 
 @dataclass
@@ -32,6 +20,7 @@ class Game:
         default_factory=lambda: deque(maxlen=MESSAGE_LOG_SIZE)
     )
     floor_items: dict[Point, Item] = field(default_factory=dict)
+    turn: int = 0
 
     def take_item(self, point: Point) -> Item | None:
         return self.floor_items.pop(point, None)

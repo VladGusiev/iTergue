@@ -14,7 +14,7 @@ ITEM_TYPES: dict[str, Item] = {
     "SMALL_HEALTH_POTION": Potion(name="Small Health Potion", display="!", heal=20),
     "DULL_SWORD": Weapon(name="Dull Sword", display="/", bonus=Stats(damage=5)),
     "RUSTY_ARMOR": Armor(name="Rusty Armor", display="[", bonus=Stats(defence=3)),
-    "RESTING_SPELL": Spell(name="Resting Spell", display="~"),
+    "RESTING_SPELL": Spell(name="Resting Spell", display="~", cooldown=3, ready_at=0),
     "CHEST_KEY": Key(name="Chest Key", display="k"),
     "MAGIC_STONE": StoryItem(name="Magic Stone", display="*"),
 }

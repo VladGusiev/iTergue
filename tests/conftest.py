@@ -6,6 +6,7 @@ from itergue.game import Game
 from itergue.geometry import Point
 from itergue.level import Level
 from itergue.main import LEVEL_DIR
+from itergue.messages import Message
 from itergue.player import Player
 
 
@@ -18,9 +19,9 @@ def game(level, player):
 def use():
     """Player.use takes a slot, so put the item in the bag and use that slot."""
 
-    def _use(owner: Player, item) -> str:
+    def _use(owner: Player, item, turn: int = 0) -> Message:
         owner.inventory.add(item)
-        return owner.use(len(owner.inventory) - 1)
+        return owner.use(len(owner.inventory) - 1, turn)
 
     return _use
 

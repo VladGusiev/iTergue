@@ -1,9 +1,11 @@
+import dataclasses
 from dataclasses import dataclass, field
 
 from itergue.combat import Stats
 from itergue.geometry import Point
 from itergue.inventory import Equipment, Inventory
-from itergue.items import Armor, Consumable, Weapon
+from itergue.items import Armor, Consumable, Cooldownable, Weapon
+from itergue.messages import Message, MessageKind
 from itergue.tiles import Direction, RoomObject
 
 MOVES = {
@@ -46,13 +48,29 @@ class Player:
     def set_position(self, position: Point) -> None:
         self.position = position
 
-    def use(self, index: int) -> str:
+    def use(self, index: int, turn: int) -> Message:
         """Apply a carried item. Returns a line to log"""
         item = self.inventory[index]
         if isinstance(item, Consumable):
-            self.inventory.take(index)
-            return item.consume(self)
+            if not isinstance(item, Cooldownable):
+                self.inventory.take(index)  # remove it from the inventory
+                return Message(item.consume(self), MessageKind.GOOD)
+            if turn < item.ready_at:
+                # A refusal is information, not an achievement.
+                waiting = item.ready_at - turn
+                return Message(
+                    f"{item.name} is on cooldown for {waiting} more turns.",
+                    MessageKind.INFO,
+                )
+            message = item.consume(self)
+            # A new value, rebound into the slot. The definition is never written to
+            cooling = dataclasses.replace(item, ready_at=turn + item.cooldown)
+            self.inventory.replace(index, cooling)
+            return Message(message, MessageKind.GOOD)
         if isinstance(item, Weapon | Armor):
             self.inventory.replace(index, self.equipment.equip(item))
-            return f"You equipped {item.name} in the {item.slot.name} slot."
-        return f"You cannot use {item.name} on its own."
+            return Message(
+                f"You equipped {item.name} in the {item.slot.name} slot.",
+                MessageKind.GOOD,
+            )
+        return Message(f"You cannot use {item.name} on its own.", MessageKind.INFO)
