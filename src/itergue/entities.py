@@ -11,12 +11,41 @@ ENEMY_TYPES = {
 }
 
 ITEM_TYPES: dict[str, Item] = {
-    "SMALL_HEALTH_POTION": Potion(name="Small Health Potion", display="!", heal=20),
-    "DULL_SWORD": Weapon(name="Dull Sword", display="/", bonus=Stats(damage=5)),
-    "RUSTY_ARMOR": Armor(name="Rusty Armor", display="[", bonus=Stats(defence=3)),
-    "RESTING_SPELL": Spell(name="Resting Spell", display="~", cooldown=3, ready_at=0),
-    "CHEST_KEY": Key(name="Chest Key", display="k"),
-    "MAGIC_STONE": StoryItem(name="Magic Stone", display="*"),
+    "SMALL_HEALTH_POTION": Potion(
+        name="Small Health Potion",
+        display="!",
+        heal=20,
+        description="A cloudy red draught that closes wounds.",
+    ),
+    "DULL_SWORD": Weapon(
+        name="Dull Sword",
+        display="/",
+        bonus=Stats(damage=5),
+        description="A blunt, notched blade. Better than fists.",
+    ),
+    "RUSTY_ARMOR": Armor(
+        name="Rusty Armor",
+        display="[",
+        bonus=Stats(defence=3),
+        description="Pitted iron plates that still turn a blade.",
+    ),
+    "RESTING_SPELL": Spell(
+        name="Resting Spell",
+        display="~",
+        cooldown=3,
+        ready_at=0,
+        description="A whispered charm. Slow to gather again.",
+    ),
+    "CHEST_KEY": Key(
+        name="Chest Key",
+        display="k",
+        description="Cold brass, worn smooth. It opens something.",
+    ),
+    "MAGIC_STONE": StoryItem(
+        name="Magic Stone",
+        display="*",
+        description="Warm to the touch. It does nothing you can name.",
+    ),
 }
 
 

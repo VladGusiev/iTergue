@@ -52,9 +52,18 @@ def test_every_equippable_declares_the_slot_it_belongs_in():
 def test_slot_is_fixed_per_class_and_not_a_constructor_argument():
     # `slot = EquipSlot.WEAPON` has no annotation, so it is a class attribute,
     # not a field. Every weapon agrees on it and nobody can pass a different one.
-    from itergue.items import Weapon
+    from itergue.items import EquipSlot, Weapon
 
-    assert [f.name for f in dataclasses.fields(Weapon)] == ["name", "display", "bonus"]
+    assert "slot" not in [f.name for f in dataclasses.fields(Weapon)]
+    with pytest.raises(TypeError):
+        # ty refuses this statically too, as unknown-argument. The suppression is
+        # here to prove the runtime rejects it as well, gate or no gate.
+        Weapon(
+            name="x",
+            display="/",
+            bonus=Stats(),
+            slot=EquipSlot.ARMOR,  # ty: ignore[unknown-argument]
+        )
 
 
 def test_the_type_table_carries_one_of_each_kind():
@@ -141,3 +150,30 @@ def test_a_potion_is_spent_and_a_spell_is_only_unavailable():
 
     hero.use(0, turn=0)  # a cast leaves the spell where it is
     assert len(hero.inventory) == 1
+
+
+def test_every_item_the_player_can_pick_up_describes_itself():
+    # The default is "", so the only thing stopping a new item shipping without
+    # a description is this test.
+    assert all(item.description for item in ITEM_TYPES.values())
+
+
+def test_no_description_gives_the_numbers_away():
+    # The player is meant to find the numbers by playing, not by reading.
+    assert not any(
+        character.isdigit()
+        for item in ITEM_TYPES.values()
+        for character in item.description
+    )
+
+
+def test_the_bag_screen_fits_a_narrow_terminal():
+    from itergue.player import Player
+    from itergue.render import bag_lines
+
+    player = Player()
+    for item in list(ITEM_TYPES.values()) * 2:
+        player.inventory.add(item)
+
+    assert player.inventory.is_full
+    assert max(len(line) for line in bag_lines(player)) < 80

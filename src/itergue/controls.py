@@ -17,13 +17,19 @@ MOVE = Control(
     "Move left, down, up, right",
     frozenset(direction.value for direction in Direction),
 )
+# The tenth slot is 0, as in every roguelike. Keeping the order here means the
+# HUD label, the help screen and the key that acts cannot disagree.
+SLOTS = "1234567890"
+SLOT_INDEX = {ord(digit): index for index, digit in enumerate(SLOTS)}
+
 SLOT = Control(
-    "1-9",
+    f"{SLOTS[0]}-{SLOTS[-1]}",
     "Use or equip the item in that inventory slot",
-    frozenset(range(ord("1"), ord("9") + 1)),
+    frozenset(SLOT_INDEX),
 )
+BAG = Control("i", "List what you are carrying, with names", frozenset(b"iI"))
 SWAP = Control("s", "Swap your last slot for the item under you", frozenset(b"sS"))
 HELP = Control("?", "Show this screen", frozenset(b"?"))
 QUIT = Control("q", "Quit", frozenset(b"qQ"))
 
-CONTROLS = (MOVE, SLOT, SWAP, HELP, QUIT)
+CONTROLS = (MOVE, SLOT, BAG, SWAP, HELP, QUIT)

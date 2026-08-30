@@ -17,6 +17,7 @@ class Armor:
     name: str
     display: str
     bonus: Stats
+    description: str = ""
     slot = EquipSlot.ARMOR
 
 
@@ -25,6 +26,7 @@ class Weapon:
     name: str
     display: str
     bonus: Stats
+    description: str = ""
     slot = EquipSlot.WEAPON
 
 
@@ -33,6 +35,7 @@ class Potion:
     name: str
     display: str
     heal: int
+    description: str = ""
 
     def consume(self, target: Combatant) -> str:
         """Apply the item's effect to the target. Returns a line to log."""
@@ -46,6 +49,7 @@ class Spell:
     display: str
     cooldown: int
     ready_at: int
+    description: str = ""
 
     def consume(self, target: Combatant) -> str:
         """Apply the item's effect to the target. Returns a line to log."""
@@ -57,12 +61,14 @@ class Spell:
 class Key:
     name: str
     display: str
+    description: str = ""
 
 
 @dataclass(frozen=True, slots=True)
 class StoryItem:
     name: str
     display: str
+    description: str = ""
 
 
 # EquipSlot is a closed enum, so what can fill a slot is closed too, and a union

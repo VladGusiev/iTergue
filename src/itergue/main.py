@@ -4,14 +4,14 @@ from curses import wrapper
 from pathlib import Path
 
 from itergue.combat import attack
-from itergue.controls import HELP, QUIT, SWAP
+from itergue.controls import BAG, HELP, QUIT, SLOT_INDEX, SWAP
 from itergue.entities import load_enemies, load_items
 from itergue.game import Game
 from itergue.geometry import Point
 from itergue.level import Level, LevelError
 from itergue.messages import MessageKind
 from itergue.player import Player
-from itergue.render import init_colors, render, render_controls
+from itergue.render import init_colors, render, render_bag, render_controls
 from itergue.tiles import RoomObject
 
 LEVEL_DIR = Path(__file__).parent / "levels"
@@ -28,7 +28,7 @@ def main() -> None:
 def update_state(game: Game, ch: int) -> None:
     player = game.player
     target = player.proposed_position(ch)
-    slot = ch - ord("1")  # keys 1-9 use an inventory slot
+    slot = SLOT_INDEX.get(ch, -1)  # -1 for every key that is not a slot key
     blocker = next((e for e in game.enemies if e.position == target), None)
 
     # Use an item from the inventory if a number key was pressed and
@@ -91,6 +91,12 @@ def start(stdscr: curses.window) -> None:
         if ch in HELP.keys:
             # Reading the controls is not a turn, so it never reaches update_state.
             render_controls(stdscr)
+            stdscr.getch()
+            render(stdscr, game_instance)
+            continue
+        if ch in BAG.keys:
+            # Looking in your own bag is not a turn either.
+            render_bag(stdscr, game_instance.player)
             stdscr.getch()
             render(stdscr, game_instance)
             continue

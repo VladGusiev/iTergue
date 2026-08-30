@@ -1,7 +1,7 @@
 import curses
 from collections import deque
 
-from itergue.controls import CONTROLS, HELP, QUIT
+from itergue.controls import CONTROLS, HELP, QUIT, SLOTS
 from itergue.enemy import Enemy
 from itergue.game import Game
 from itergue.geometry import Point
@@ -70,11 +70,16 @@ def render_enemies(
             stdscr.addch(screen.y, screen.x, enemy.display)
 
 
-def render_hud(stdscr: curses.window, player: Player) -> None:
-    carried = "  ".join(
-        f"{number}:{item.display}{item.name}"
-        for number, item in enumerate(player.inventory, start=1)
+def carried_line(player: Player) -> str:
+    """The one-line bag summary. Names are too wide for it and live on the i screen."""
+    return " ".join(
+        f"{label}:{item.display}"
+        for label, item in zip(SLOTS, player.inventory, strict=False)
     )
+
+
+def render_hud(stdscr: curses.window, player: Player) -> None:
+    carried = carried_line(player)
     slots = []
     for slot in EquipSlot:
         item = player.equipment[slot]
@@ -85,15 +90,64 @@ def render_hud(stdscr: curses.window, player: Player) -> None:
     stdscr.addstr(curses.LINES - 2, 0, "   ".join(slots)[: curses.COLS - 1])
 
 
+OVERLAY_FOOTER = "Press any key to return"
+
+
+def centered_block(
+    title: str, lines: list[str], width: int, height: int
+) -> tuple[list[str], int, int]:
+    """Lay a titled block out for a width x height screen. Returns lines, top, left."""
+    block_width = max(len(line) for line in (title, OVERLAY_FOOTER, *lines))
+    block = [
+        title.center(block_width),
+        "",
+        *lines,
+        "",
+        OVERLAY_FOOTER.center(block_width),
+    ]
+    # A screen smaller than the block starts at the corner and loses the overflow,
+    # which beats negative coordinates and a curses error.
+    return block, max(0, (height - len(block)) // 2), max(0, (width - block_width) // 2)
+
+
+def render_overlay(stdscr: curses.window, title: str, lines: list[str]) -> None:
+    """Draw a titled block in the middle of a cleared screen. Caller waits for a key."""
+    block, top, left = centered_block(title, lines, curses.COLS, curses.LINES)
+    stdscr.clear()
+    for offset, line in enumerate(block):
+        row = top + offset
+        if row < curses.LINES:
+            attrs = curses.A_BOLD if offset == 0 else curses.A_NORMAL
+            stdscr.addstr(row, left, line[: curses.COLS - left - 1], attrs)
+    stdscr.refresh()
+
+
 def render_controls(stdscr: curses.window) -> None:
     """Draw the key bindings over the whole screen. Caller waits for a keypress."""
-    stdscr.clear()
-    stdscr.addstr(0, 0, "Controls", curses.A_BOLD)
-    for row, control in enumerate(CONTROLS, start=2):
-        line = f"{control.label:<{LABEL_WIDTH}}  {control.description}"
-        stdscr.addstr(row, 2, line[: curses.COLS - 3])
-    stdscr.addstr(len(CONTROLS) + 3, 0, "Press any key to return")
-    stdscr.refresh()
+    render_overlay(
+        stdscr,
+        "Controls",
+        [
+            f"{control.label:<{LABEL_WIDTH}}  {control.description}"
+            for control in CONTROLS
+        ],
+    )
+
+
+def bag_lines(player: Player) -> list[str]:
+    """One row per carried item: slot key, glyph, name, description."""
+    pairs = list(zip(SLOTS, player.inventory, strict=False))  # a bag may be part full
+    name_width = max((len(item.name) for _, item in pairs), default=0)
+    rows = [
+        f"{label}  {item.display}  {item.name:<{name_width}}  {item.description}"
+        for label, item in pairs
+    ]
+    return [row.rstrip() for row in rows] or ["Nothing at all"]
+
+
+def render_bag(stdscr: curses.window, player: Player) -> None:
+    """Draw the carried items with their names. Caller waits for a keypress."""
+    render_overlay(stdscr, "Carrying", bag_lines(player))
 
 
 def render(stdscr: curses.window, game: Game) -> None:
