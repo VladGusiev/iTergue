@@ -1,5 +1,7 @@
 from collections import deque
 
+import pytest
+
 from itergue.enemy import Enemy
 from itergue.entities import ITEM_TYPES
 from itergue.game import MESSAGE_LOG_SIZE, Game, Message, MessageKind
@@ -74,3 +76,27 @@ def test_each_game_gets_its_own_floor(level, player):
     second = Game(level=level, player=player, enemies=[])
     first.floor_items[Point(1, 1)] = ITEM_TYPES["DULL_SWORD"]
     assert second.floor_items == {}
+
+
+def test_a_bad_level_file_exits_before_curses_is_touched(monkeypatch, capsys, tmp_path):
+    # The whole point of building the game outside wrapper(): this test needs no
+    # terminal at all. Against the old start(), it needed a pseudo-terminal.
+    import itergue.main as main_module
+
+    monkeypatch.setattr(main_module, "LEVEL_DIR", tmp_path)  # holds no level-1.json
+
+    with pytest.raises(SystemExit) as exit_info:
+        main_module.main()
+
+    assert exit_info.value.code == 1
+    assert "Could not start iTergue" in capsys.readouterr().err
+
+
+def test_build_game_puts_the_player_where_the_level_says():
+    from itergue.main import build_game
+
+    game = build_game()
+
+    assert game.player.position == game.level.player_start
+    assert game.turn == 0
+    assert len(game.enemies) == 2  # level-1 lists a slime and an orc

@@ -24,12 +24,47 @@ from itergue.tiles import RoomObject
 LEVEL_DIR = Path(__file__).parent / "levels"
 
 
+def build_game() -> Game:
+    level = Level(LEVEL_DIR / "level-1.json")
+    enemies = load_enemies(level)
+    items = load_items(level)
+    player = Player(position=level.player_start)
+
+    return Game(level=level, player=player, enemies=enemies, floor_items=items)
+
+
 def main() -> None:
     try:
-        wrapper(start)
+        game = build_game()
     except LevelError as e:
         print(f"Could not start iTergue: {e}", file=sys.stderr)
         raise SystemExit(1) from e
+    game.log("Your journey begins!")
+    wrapper(
+        start, game
+    )  # curses takes over the terminal, calls start(), and cleans up afterward
+
+
+def start(stdscr: curses.window, game: Game) -> None:
+    curses.curs_set(0)  # hide cursor
+    init_colors()  # set up color pairs for message kinds
+
+    render(stdscr, game)
+    while True:
+        ch = stdscr.getch()
+        if ch in QUIT.keys:
+            break
+        if ch in HELP.keys:
+            show_screen(stdscr, render_controls, game)
+            continue  # looking at the controls is not a turn
+        if ch in BAG.keys:
+            show_screen(stdscr, render_bag, game)
+            continue
+        update_state(game, ch)
+        render(stdscr, game)
+        if game.player.hp <= 0:
+            render_game_over(stdscr)
+            break
 
 
 def player_acts(game: Game, ch: int) -> bool:
@@ -83,36 +118,6 @@ def step(game: Game, target: Point) -> bool:
                     kind=MessageKind.BAD,
                 )
     return True
-
-
-def start(stdscr: curses.window) -> None:
-    curses.curs_set(0)  # hide cursor
-    init_colors()  # set up color pairs for message kinds
-
-    level = Level(LEVEL_DIR / "level-1.json")
-    enemies = load_enemies(level)
-    items = load_items(level)
-    player = Player(position=level.player_start)
-
-    game_instance = Game(level=level, player=player, enemies=enemies, floor_items=items)
-    game_instance.log("Your journey begins!")
-
-    render(stdscr, game_instance)
-    while True:
-        ch = stdscr.getch()
-        if ch in QUIT.keys:
-            break
-        if ch in HELP.keys:
-            show_screen(stdscr, render_controls, game_instance)
-            continue  # looking at the controls is not a turn
-        if ch in BAG.keys:
-            show_screen(stdscr, render_bag, game_instance)
-            continue
-        update_state(game_instance, ch)
-        render(stdscr, game_instance)
-        if game_instance.player.hp <= 0:
-            render_game_over(stdscr)
-            break
 
 
 def take_from_the_floor(game: Game, position: Point) -> None:
