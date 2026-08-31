@@ -11,3 +11,15 @@ class MessageKind(Enum):
 class Message(NamedTuple):
     text: str
     kind: MessageKind = MessageKind.INFO
+
+
+class Outcome(NamedTuple):
+    """The result of a player action, to be logged and rendered."""
+
+    message: Message
+    spent_turn: bool = True
+
+
+def refused(text: str) -> Outcome:
+    """Nothing happened, inform and don't spend a turn."""
+    return Outcome(message=Message(text=text, kind=MessageKind.INFO), spent_turn=False)

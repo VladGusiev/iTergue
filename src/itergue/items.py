@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-from enum import Enum
+from enum import Enum, auto
 from typing import Protocol, runtime_checkable
 
-from itergue.combat import Combatant, Stats
+from itergue.combat import Combatant, Stats, strike
 
 
 class EquipSlot(Enum):
@@ -10,6 +10,14 @@ class EquipSlot(Enum):
 
     WEAPON = "Weapon"
     ARMOR = "Armor"
+
+
+class Targeting(Enum):
+    """Who an effect lands on. Closed bacause somebody has to resolve each one"""
+
+    SELF = auto()
+    NEAREST_ENEMY = auto()
+    ALL_ENEMIES = auto()
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,6 +44,7 @@ class Potion:
     display: str
     heal: int
     description: str = ""
+    targeting = Targeting.SELF
 
     def consume(self, target: Combatant) -> str:
         """Apply the item's effect to the target. Returns a line to log."""
@@ -44,17 +53,33 @@ class Potion:
 
 
 @dataclass(frozen=True, slots=True)
-class Spell:
+class AttackSpell:
     name: str
+    display: str
+    damage: int
+    cooldown: int
+    ready_at: int
+    description: str = ""
+    targeting = Targeting.NEAREST_ENEMY
+
+    def consume(self, target: Combatant) -> str:
+        landed = strike(self.damage, target)
+        return f"{self.name} hits {target.name} for {landed} damage."
+
+
+@dataclass(frozen=True, slots=True)
+class HelpingSpell:
+    name: str
+    heal: int
     display: str
     cooldown: int
     ready_at: int
     description: str = ""
+    targeting = Targeting.SELF
 
     def consume(self, target: Combatant) -> str:
-        """Apply the item's effect to the target. Returns a line to log."""
-        target.hp += 10
-        return f"{target.name} healed by {self.name} for 10 HP."
+        target.hp += self.heal
+        return f"{self.name} heals {target.name} for {self.heal} HP."
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,7 +100,7 @@ class StoryItem:
 # buys exhaustiveness checking that a protocol cannot. The verb axis is open and
 # takes the protocol instead; see Consumable below.
 Equippable = Weapon | Armor
-Item = Equippable | Potion | Key | StoryItem | Spell
+Item = Equippable | Potion | Key | StoryItem | AttackSpell | HelpingSpell
 
 
 @runtime_checkable
@@ -87,6 +112,9 @@ class Consumable(Protocol):
     def consume(self, target: Combatant) -> str:
         """Apply the item's effect to the target. Returns a line to log."""
         ...
+
+    @property
+    def targeting(self) -> Targeting: ...
 
 
 @runtime_checkable

@@ -73,9 +73,10 @@ def player_acts(game: Game, ch: int) -> bool:
     slot = SLOT_INDEX.get(ch, -1)  # -1 for every key that is not a slot key
 
     if 0 <= slot < len(player.inventory):
-        message = player.use(slot, game.turn)
-        game.log(message.text, kind=message.kind)
-        return True
+        outcome = player.use(slot, game.turn, game.enemies)
+        game.log(outcome.message.text, kind=outcome.message.kind)
+        game.remove_dead_enemies()
+        return outcome.spent_turn
     if ch in SWAP.keys:
         take_from_the_floor(game, player.position)
         return True

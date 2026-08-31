@@ -78,13 +78,13 @@ def test_the_type_table_carries_one_of_each_kind():
 
 
 def test_a_potion_and_a_spell_are_consumable_without_inheriting_anything():
-    from itergue.items import Consumable, Potion, Spell
+    from itergue.items import Consumable, HelpingSpell, Potion
 
     assert isinstance(ITEM_TYPES["SMALL_HEALTH_POTION"], Consumable)
-    assert isinstance(ITEM_TYPES["RESTING_SPELL"], Consumable)
+    assert isinstance(ITEM_TYPES["FIRE_BALL"], Consumable)
     # Structural, not nominal: neither class has Consumable anywhere above it.
     assert Consumable not in Potion.__mro__
-    assert Consumable not in Spell.__mro__
+    assert Consumable not in HelpingSpell.__mro__
 
 
 def test_the_equippable_union_is_exactly_the_two_slot_types():
@@ -98,18 +98,18 @@ def test_the_equippable_union_is_exactly_the_two_slot_types():
 
 
 def test_the_table_is_a_definition_and_a_cast_never_touches_it():
-    from itergue.items import Spell
+    from itergue.items import HelpingSpell
     from itergue.player import Player
 
-    definition = ITEM_TYPES["RESTING_SPELL"]
+    definition = ITEM_TYPES["SPELL_OF_MINOR_HEALING"]
     hero = Player(hp=50)
     hero.inventory.add(definition)
-    hero.use(0, turn=0)
+    hero.use(0, turn=0, others=[])
     carried = hero.inventory[0]
 
-    # ITEM_TYPES is dict[str, Item], so reading a Spell field needs the narrowing
+    # ITEM_TYPES is dict[str, Item], so reading a HelpingSpell field needs the narrowing
     # assert. In a test that is documentation, not ceremony.
-    assert isinstance(definition, Spell) and isinstance(carried, Spell)
+    assert isinstance(definition, HelpingSpell) and isinstance(carried, HelpingSpell)
     assert definition.ready_at == 0  # the table is a definition, not a carrier
     assert carried.ready_at == 3
     assert carried is not definition
@@ -120,22 +120,24 @@ def test_two_carriers_of_one_definition_have_their_own_clocks():
 
     hero, rival = Player(name="Kyle", hp=50), Player(name="Rival", hp=50)
     for carrier in (hero, rival):
-        carrier.inventory.add(ITEM_TYPES["RESTING_SPELL"])
+        carrier.inventory.add(ITEM_TYPES["SPELL_OF_MINOR_HEALING"])
 
-    hero.use(0, turn=0)
-    assert "cooldown" in hero.use(0, turn=1).text
-    assert "healed" in rival.use(0, turn=1).text  # one definition, separate clocks
+    hero.use(0, turn=0, others=[])
+    assert hero.use(0, turn=1, others=[]).spent_turn is False
+    # one definition, separate clocks
+    assert "heals" in rival.use(0, turn=1, others=[]).message.text
 
 
 def test_the_cooldown_blocks_then_expires():
     from itergue.player import Player
 
     hero = Player(hp=50)
-    hero.inventory.add(ITEM_TYPES["RESTING_SPELL"])
+    hero.inventory.add(ITEM_TYPES["SPELL_OF_MINOR_HEALING"])
 
-    assert "healed" in hero.use(0, turn=0).text
-    assert "cooldown" in hero.use(0, turn=2).text
-    assert "healed" in hero.use(0, turn=3).text  # ready_at == 0 + cooldown
+    assert "heals" in hero.use(0, turn=0, others=[]).message.text
+    assert hero.use(0, turn=2, others=[]).spent_turn is False
+    # ready_at == 0 + cooldown
+    assert "heals" in hero.use(0, turn=3, others=[]).message.text
 
 
 def test_a_potion_is_spent_and_a_spell_is_only_unavailable():
@@ -143,12 +145,13 @@ def test_a_potion_is_spent_and_a_spell_is_only_unavailable():
 
     hero = Player(hp=50)
     hero.inventory.add(ITEM_TYPES["SMALL_HEALTH_POTION"])
-    hero.inventory.add(ITEM_TYPES["RESTING_SPELL"])
+    hero.inventory.add(ITEM_TYPES["SPELL_OF_MINOR_HEALING"])
 
-    hero.use(0, turn=0)  # the potion is gone, so the spell shifts into slot 0
+    # the potion is gone, so the spell shifts into slot 0
+    hero.use(0, turn=0, others=[])
     assert len(hero.inventory) == 1
 
-    hero.use(0, turn=0)  # a cast leaves the spell where it is
+    hero.use(0, turn=0, others=[])  # a cast leaves the spell where it is
     assert len(hero.inventory) == 1
 
 

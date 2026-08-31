@@ -5,7 +5,7 @@ import pytest
 from itergue.combat import Stats
 from itergue.entities import ITEM_TYPES
 from itergue.geometry import Point
-from itergue.items import Armor, EquipSlot, Potion, Weapon
+from itergue.items import Armor, EquipSlot, Potion, Targeting, Weapon
 from itergue.player import Player
 
 
@@ -51,21 +51,21 @@ def test_damage_is_the_base_until_something_is_equipped(player):
 
 def test_using_a_potion_heals_the_player(use):
     player = Player(hp=50)
-    message = use(player, Potion(name="tonic", display="!", heal=20))
+    outcome = use(player, Potion(name="tonic", display="!", heal=20))
     assert player.hp == 70
-    assert "tonic" in message.text
+    assert "tonic" in outcome.message.text
 
 
 def test_equipping_a_weapon_raises_damage_without_storing_it(player, use):
     axe = Weapon(name="axe", display="/", bonus=Stats(damage=15))
 
-    message = use(player, axe)
+    outcome = use(player, axe)
 
     assert player.equipment[EquipSlot.WEAPON] is axe
     assert player.equipment[EquipSlot.ARMOR] is None  # the other slot is untouched
     assert player.damage == 25  # derived: 10 base + 15 bonus
     assert player.base == Stats(damage=10)  # the base was never written to
-    assert "axe" in message.text
+    assert "axe" in outcome.message.text
 
 
 def test_unequipping_restores_the_base_damage(player, use):
@@ -113,9 +113,9 @@ def test_an_item_with_no_verb_stays_in_the_bag(player, use):
         Key(name="brass key", display="k"),
         StoryItem(name="page", display="*"),
     ):
-        message = use(player, item)
+        outcome = use(player, item)
         assert item in player.inventory  # a designed no-op must not eat the item
-        assert item.name in message.text
+        assert item.name in outcome.message.text
 
     assert len(player.inventory) == 2
 
@@ -127,6 +127,7 @@ def test_a_new_consumable_needs_no_production_code():
     class Bandage:
         name: str = "bandage"
         display: str = "+"
+        targeting = Targeting.SELF  # added in Lesson 22; see the test below
 
         def consume(self, target) -> str:
             target.hp += 5
@@ -137,6 +138,6 @@ def test_a_new_consumable_needs_no_production_code():
     # it. Dispatch is structural, but the container it has to sit in is not.
     player.inventory.add(Bandage())  # ty: ignore[invalid-argument-type]
 
-    assert player.use(0, 1).text == "Kyle binds a wound for 5 HP."
+    assert player.use(0, 1, []).message.text == "Kyle binds a wound for 5 HP."
     assert player.hp == 55
     assert len(player.inventory) == 0  # consumed, so the slot is freed

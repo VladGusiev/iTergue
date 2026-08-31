@@ -1,11 +1,12 @@
 import dataclasses
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 
-from itergue.combat import Stats
+from itergue.combat import Combatant, Stats, nearest
 from itergue.geometry import Point
 from itergue.inventory import Equipment, Inventory
-from itergue.items import Armor, Consumable, Cooldownable, Weapon
-from itergue.messages import Message, MessageKind
+from itergue.items import Armor, Consumable, Cooldownable, Targeting, Weapon
+from itergue.messages import Message, MessageKind, Outcome, refused
 from itergue.tiles import Direction, RoomObject
 
 MOVES = {
@@ -48,29 +49,39 @@ class Player:
     def set_position(self, position: Point) -> None:
         self.position = position
 
-    def use(self, index: int, turn: int) -> Message:
+    def aim(
+        self, targeting: Targeting, others: Sequence[Combatant]
+    ) -> Combatant | None:
+        """Turn a targeting rule into the combatant it lands on, if there is one."""
+        if targeting is Targeting.SELF:
+            return self
+        return nearest(self.position, others)
+
+    def use(self, index: int, turn: int, others: Sequence[Combatant]) -> Outcome:
         """Apply a carried item. Returns a line to log"""
         item = self.inventory[index]
         if isinstance(item, Consumable):
+            target = self.aim(item.targeting, others)
+            if target is None:
+                return refused(f"There is no target for {item.name}.")
             if not isinstance(item, Cooldownable):
                 self.inventory.take(index)  # remove it from the inventory
-                return Message(item.consume(self), MessageKind.GOOD)
+                return Outcome(message=Message(item.consume(target), MessageKind.GOOD))
             if turn < item.ready_at:
                 # A refusal is information, not an achievement.
                 waiting = item.ready_at - turn
-                return Message(
-                    f"{item.name} is on cooldown for {waiting} more turns.",
-                    MessageKind.INFO,
-                )
-            message = item.consume(self)
+                return refused(f"{item.name} is not ready for {waiting} more turns.")
+            message = item.consume(target)
             # A new value, rebound into the slot. The definition is never written to
             cooling = dataclasses.replace(item, ready_at=turn + item.cooldown)
             self.inventory.replace(index, cooling)
-            return Message(message, MessageKind.GOOD)
+            return Outcome(message=Message(message, MessageKind.GOOD))
         if isinstance(item, Weapon | Armor):
             self.inventory.replace(index, self.equipment.equip(item))
-            return Message(
-                f"You equipped {item.name} in the {item.slot.name} slot.",
-                MessageKind.GOOD,
+            return Outcome(
+                message=Message(
+                    f"You equipped {item.name} in the {item.slot.name} slot.",
+                    MessageKind.GOOD,
+                )
             )
-        return Message(f"You cannot use {item.name} on its own.", MessageKind.INFO)
+        return refused(f"You cannot use {item.name} on its own.")

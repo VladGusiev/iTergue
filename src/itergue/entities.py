@@ -1,7 +1,16 @@
 from itergue.combat import Stats
 from itergue.enemy import Enemy
 from itergue.geometry import Point
-from itergue.items import Armor, Item, Key, Potion, Spell, StoryItem, Weapon
+from itergue.items import (
+    Armor,
+    AttackSpell,
+    HelpingSpell,
+    Item,
+    Key,
+    Potion,
+    StoryItem,
+    Weapon,
+)
 from itergue.level import Level, LevelError
 from itergue.tiles import RoomObject
 
@@ -29,12 +38,21 @@ ITEM_TYPES: dict[str, Item] = {
         bonus=Stats(defence=3),
         description="Pitted iron plates that still turn a blade.",
     ),
-    "RESTING_SPELL": Spell(
-        name="Resting Spell",
+    "FIRE_BALL": AttackSpell(
+        name="Fire Ball",
         display="~",
+        damage=5,
         cooldown=3,
         ready_at=0,
-        description="A whispered charm. Slow to gather again.",
+        description="Simple but effective, incinerates your enemy.",
+    ),
+    "SPELL_OF_MINOR_HEALING": HelpingSpell(
+        name="Spell of Minor Healing",
+        display="^",
+        cooldown=3,
+        ready_at=0,
+        description="A simple spell, that produces soothing light",
+        heal=20,
     ),
     "CHEST_KEY": Key(
         name="Chest Key",

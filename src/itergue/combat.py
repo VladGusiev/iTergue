@@ -1,5 +1,8 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
+
+from itergue.geometry import Point
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,6 +21,7 @@ class Stats:
 class Combatant(Protocol):
     name: str
     hp: int
+    position: Point
 
     @property
     def damage(self) -> int:
@@ -28,5 +32,19 @@ class Combatant(Protocol):
         """Read-only property that returns the defence this combatant has."""
 
 
-def attack(initiator: Combatant, target: Combatant) -> None:
-    target.hp -= max(1, initiator.damage - target.defence)
+def attack(initiator: Combatant, target: Combatant) -> int:
+    return strike(initiator.damage, target)
+
+
+def strike(damage: int, target: Combatant) -> int:
+    """Apply damage past defence. Returns what actually landed."""
+    landed = max(1, damage - target.defence)
+    target.hp -= landed
+    return landed
+
+
+def nearest(origin: Point, others: Sequence[Combatant]) -> Combatant | None:
+    """Return the combatant closest to origin, or None if there are none."""
+    if not others:
+        return None
+    return min(others, key=lambda other: (origin - other.position).length())
