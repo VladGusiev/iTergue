@@ -176,3 +176,54 @@ def test_armor_from_the_bag_soaks_damage(game):
     update_state(game, ord("1"))  # wear it, and the orc gets its turn
 
     assert game.player.hp == 93  # 100 - max(1, 10 - 3)
+
+
+def test_an_unbound_key_costs_the_player_nothing(game):
+    # Regression: every key that meant nothing still ended the turn, so pressing
+    # an arrow key handed every enemy on the level a free move and a free hit.
+    game.enemies = [Enemy(position=Point(6, 5), hp=10, damage=3)]
+
+    update_state(game, ord("x"))
+
+    assert game.turn == 0
+    assert game.player.hp == 100
+    assert game.enemies[0].position == Point(6, 5)
+
+
+def test_an_unbound_key_does_not_pick_up_what_you_are_standing_on(game):
+    # Regression: an unbound key fell through to the move branch, "moved" the
+    # player onto the tile they were already on, and picked the tile up.
+    game.floor_items[game.player.position] = ITEM_TYPES["CHEST_KEY"]
+
+    update_state(game, ord("x"))
+
+    assert len(game.player.inventory) == 0
+    assert game.player.position in game.floor_items
+
+
+def test_walking_into_a_wall_costs_no_turn(game):
+    game.player = Player(position=Point(1, 1))  # column x=0 is a wall
+
+    update_state(game, ord("h"))
+
+    assert game.turn == 0
+
+
+def test_a_move_that_happens_costs_exactly_one_turn(game):
+    update_state(game, ord("l"))
+
+    assert game.turn == 1
+
+
+def test_every_screen_has_the_shape_show_screen_promises(game):
+    # ScreenDrawer is (window, Game) -> None. Nothing checks that at runtime, so
+    # this pins the signature the game loop actually calls them with.
+    from inspect import signature
+
+    from itergue.render import render_bag, render_controls
+
+    for screen in (render_bag, render_controls):
+        assert [p.name for p in signature(screen).parameters.values()] == [
+            "stdscr",
+            "game",
+        ]

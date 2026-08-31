@@ -30,3 +30,13 @@ class Game:
 
     def remove_dead_enemies(self) -> None:
         self.enemies = [enemy for enemy in self.enemies if enemy.hp > 0]
+
+    def end_turn(self) -> None:
+        """Advance the clock and let enemy act. One turn one caller"""
+        self.turn += 1
+        for enemy in self.enemies:
+            if enemy.move(self.player, self.level):
+                self.log(
+                    f"The {enemy.name} attacks you for {enemy.damage} damage!",
+                    kind=MessageKind.BAD,
+                )

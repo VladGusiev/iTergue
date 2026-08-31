@@ -1,5 +1,6 @@
 import curses
 from collections import deque
+from collections.abc import Callable
 
 from itergue.controls import CONTROLS, HELP, QUIT, SLOTS
 from itergue.enemy import Enemy
@@ -31,6 +32,16 @@ def init_colors() -> None:
     curses.use_default_colors()
     for kind, color in MESSAGE_COLORS.items():
         curses.init_pair(COLOR_PAIRS[kind], color, -1)
+
+
+type ScreenDrawer = Callable[[curses.window, Game], None]
+
+
+def show_screen(stdscr: curses.window, draw: ScreenDrawer, game: Game) -> None:
+    """Put an overlay up, wait for any key"""
+    draw(stdscr, game)
+    stdscr.getch()  # wait for a keypress before returning to the game
+    render(stdscr, game)  # redraw the game after the overlay disappears
 
 
 def render_messages(stdscr: curses.window, messages: deque[Message], top: int) -> None:
@@ -110,20 +121,27 @@ def centered_block(
     return block, max(0, (height - len(block)) // 2), max(0, (width - block_width) // 2)
 
 
-def render_overlay(stdscr: curses.window, title: str, lines: list[str]) -> None:
+def render_overlay(
+    stdscr: curses.window,
+    title: str,
+    lines: list[str],
+    color: MessageKind = MessageKind.INFO,
+) -> None:
     """Draw a titled block in the middle of a cleared screen. Caller waits for a key."""
     block, top, left = centered_block(title, lines, curses.COLS, curses.LINES)
     stdscr.clear()
     for offset, line in enumerate(block):
         row = top + offset
         if row < curses.LINES:
-            attrs = curses.A_BOLD if offset == 0 else curses.A_NORMAL
+            attrs = curses.A_BOLD | curses.color_pair(COLOR_PAIRS[color])
             stdscr.addstr(row, left, line[: curses.COLS - left - 1], attrs)
     stdscr.refresh()
 
 
-def render_controls(stdscr: curses.window) -> None:
+def render_controls(stdscr: curses.window, game: Game) -> None:
     """Draw the key bindings over the whole screen. Caller waits for a keypress."""
+    # A screen takes the whole game so every screen has one shape. This one reads
+    # none of it, until the day keys become rebindable.
     render_overlay(
         stdscr,
         "Controls",
@@ -145,9 +163,15 @@ def bag_lines(player: Player) -> list[str]:
     return [row.rstrip() for row in rows] or ["Nothing at all"]
 
 
-def render_bag(stdscr: curses.window, player: Player) -> None:
+def render_bag(stdscr: curses.window, game: Game) -> None:
     """Draw the carried items with their names. Caller waits for a keypress."""
-    render_overlay(stdscr, "Carrying", bag_lines(player))
+    render_overlay(stdscr, "Carrying", bag_lines(game.player))
+
+
+def render_game_over(stdscr: curses.window) -> None:
+    """Draw a game over message. Caller waits for a keypress."""
+    render_overlay(stdscr, "Game Over!", ["You have died."], MessageKind.BAD)
+    stdscr.getch()
 
 
 def render(stdscr: curses.window, game: Game) -> None:
