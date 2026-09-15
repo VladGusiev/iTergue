@@ -83,6 +83,35 @@ class HelpingSpell:
 
 
 @dataclass(frozen=True, slots=True)
+class BuffPotion:
+    name: str
+    display: str
+    bonus: Stats
+    duration: int
+    description: str = ""
+    targeting = Targeting.SELF
+
+    def consume(self, target: Combatant) -> str:
+        return f"{target.name} feels the {self.name} take hold."
+
+
+@dataclass(frozen=True, slots=True)
+class TimeSpell:
+    name: str
+    display: str
+    freeze: int
+    cooldown: int
+    ready_at: int
+    description: str = ""
+    targeting = Targeting.SELF
+
+    def consume(self, target: Combatant) -> str:
+        # Nothing here touches the target. The effect is on the world, so it has
+        # to leave through the Outcome instead. See Freezing below.
+        return f"{target.name} stops the clock."
+
+
+@dataclass(frozen=True, slots=True)
 class Key:
     name: str
     display: str
@@ -100,7 +129,16 @@ class StoryItem:
 # buys exhaustiveness checking that a protocol cannot. The verb axis is open and
 # takes the protocol instead; see Consumable below.
 Equippable = Weapon | Armor
-Item = Equippable | Potion | Key | StoryItem | AttackSpell | HelpingSpell
+Item = (
+    Equippable
+    | Potion
+    | Key
+    | StoryItem
+    | AttackSpell
+    | HelpingSpell
+    | BuffPotion
+    | TimeSpell
+)
 
 
 @runtime_checkable
@@ -127,3 +165,21 @@ class Cooldownable(Protocol):
     def cooldown(self) -> int: ...
     @property
     def ready_at(self) -> int: ...
+
+
+@runtime_checkable
+class Lasting(Protocol):
+    """An item whose effect is still there on later turns."""
+
+    @property
+    def bonus(self) -> Stats: ...
+    @property
+    def duration(self) -> int: ...
+
+
+@runtime_checkable
+class Freezing(Protocol):
+    """An item that stops the world rather than touching anybody in it."""
+
+    @property
+    def freeze(self) -> int: ...

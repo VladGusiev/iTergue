@@ -2,10 +2,18 @@ import dataclasses
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
-from itergue.combat import Combatant, Stats, nearest
+from itergue.combat import Combatant, Effect, Stats, nearest
 from itergue.geometry import Point
 from itergue.inventory import Equipment, Inventory
-from itergue.items import Armor, Consumable, Cooldownable, Targeting, Weapon
+from itergue.items import (
+    Armor,
+    Consumable,
+    Cooldownable,
+    Freezing,
+    Lasting,
+    Targeting,
+    Weapon,
+)
 from itergue.messages import Message, MessageKind, Outcome, refused
 from itergue.tiles import Direction, RoomObject
 
@@ -26,11 +34,24 @@ class Player:
     display: str = RoomObject.PLAYER.value
     equipment: Equipment = field(default_factory=Equipment)
     inventory: Inventory = field(default_factory=Inventory)
+    effects: list[Effect] = field(default_factory=list)
 
     @property
     def stats(self) -> Stats:
-        """Base stats plus every equipped item's bonus."""
-        return self.base + self.equipment.bonus
+        """Base, plus every equipped item, plus whatever is still affecting you.
+
+        No turn argument, on purpose. A Combatant.damage that needed the clock
+        would stop being an int and stop satisfying the protocol.
+        """
+        worn = self.base + self.equipment.bonus
+        # An empty generator returns the start value untouched, so no special case.
+        return sum((effect.bonus for effect in self.effects), worn)
+
+    def expire_effects(self, turn: int) -> list[Effect]:
+        """Drop the effects the clock has passed. Returns the ones that ended."""
+        ended = [effect for effect in self.effects if turn > effect.expires_at]
+        self.effects = [effect for effect in self.effects if turn <= effect.expires_at]
+        return ended
 
     @property
     def damage(self) -> int:
@@ -57,6 +78,15 @@ class Player:
             return self
         return nearest(self.position, others)
 
+    def apply(self, item: Consumable, target: Combatant, turn: int) -> str:
+        """Run the item's effect now, and start the lasting part if it has one."""
+        message = item.consume(target)
+        if isinstance(item, Lasting):
+            target.effects.append(
+                Effect(item.name, item.bonus, expires_at=turn + item.duration)
+            )
+        return message
+
     def use(self, index: int, turn: int, others: Sequence[Combatant]) -> Outcome:
         """Apply a carried item. Returns a line to log"""
         item = self.inventory[index]
@@ -64,18 +94,21 @@ class Player:
             target = self.aim(item.targeting, others)
             if target is None:
                 return refused(f"There is no target for {item.name}.")
-            if not isinstance(item, Cooldownable):
-                self.inventory.take(index)  # remove it from the inventory
-                return Outcome(message=Message(item.consume(target), MessageKind.GOOD))
-            if turn < item.ready_at:
+            if isinstance(item, Cooldownable) and turn < item.ready_at:
                 # A refusal is information, not an achievement.
                 waiting = item.ready_at - turn
                 return refused(f"{item.name} is not ready for {waiting} more turns.")
-            message = item.consume(target)
-            # A new value, rebound into the slot. The definition is never written to
-            cooling = dataclasses.replace(item, ready_at=turn + item.cooldown)
-            self.inventory.replace(index, cooling)
-            return Outcome(message=Message(message, MessageKind.GOOD))
+            # Every guard is above this line, because apply is a command: hoisting
+            # it any higher would spend the effect on an action that then refuses.
+            message = self.apply(item, target, turn)
+            if isinstance(item, Cooldownable):
+                # A new value, rebound into the slot. The definition is never written to
+                cooling = dataclasses.replace(item, ready_at=turn + item.cooldown)
+                self.inventory.replace(index, cooling)
+            else:
+                self.inventory.take(index)  # remove it from the inventory
+            freeze = item.freeze if isinstance(item, Freezing) else 0
+            return Outcome(Message(message, MessageKind.GOOD), freeze_turns=freeze)
         if isinstance(item, Weapon | Armor):
             self.inventory.replace(index, self.equipment.equip(item))
             return Outcome(

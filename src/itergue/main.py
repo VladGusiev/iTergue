@@ -76,6 +76,9 @@ def player_acts(game: Game, ch: int) -> bool:
         outcome = player.use(slot, game.turn, game.enemies)
         game.log(outcome.message.text, kind=outcome.message.kind)
         game.remove_dead_enemies()
+        if outcome.freeze_turns:
+            # +1 because end_turn increments before it reads frozen_until.
+            game.frozen_until = game.turn + outcome.freeze_turns + 1
         return outcome.spent_turn
     if ch in SWAP.keys:
         take_from_the_floor(game, player.position)

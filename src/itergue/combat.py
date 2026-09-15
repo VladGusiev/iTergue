@@ -17,11 +17,24 @@ class Stats:
         )
 
 
+@dataclass(frozen=True, slots=True)
+class Effect:
+    """A bonus that stops applying once the clock passes expires_at."""
+
+    name: str
+    bonus: Stats
+    expires_at: int
+
+
 @runtime_checkable
 class Combatant(Protocol):
     name: str
     hp: int
     position: Point
+    # A bare annotation, because both fighters have to be able to gain and lose
+    # effects. Affordable to add here: there are exactly two implementers and we
+    # wrote both. See Lesson 22 for the widening that was not.
+    effects: list[Effect]
 
     @property
     def damage(self) -> int:

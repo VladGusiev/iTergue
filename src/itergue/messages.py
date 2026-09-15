@@ -18,6 +18,9 @@ class Outcome(NamedTuple):
 
     message: Message
     spent_turn: bool = True
+    # Not every effect lands on a combatant. consume is only ever handed one, so
+    # a thing that acts on the world has to leave through here instead.
+    freeze_turns: int = 0
 
 
 def refused(text: str) -> Outcome:

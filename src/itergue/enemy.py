@@ -1,7 +1,7 @@
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
-from itergue.combat import attack
+from itergue.combat import Effect, attack
 from itergue.geometry import Point
 from itergue.level import Level
 from itergue.player import Player
@@ -18,6 +18,9 @@ class Enemy:
     damage: int = 5
     defence: int = 0
     display: str = RoomObject.SLIME.value
+    # Written by nothing yet. Poison through strike is the obvious
+    # next item, and the protocol is already shaped for it.
+    effects: list[Effect] = field(default_factory=list)
 
     def move(self, player: Player, level: Level) -> bool:
         """Step one tile toward the player, or attack if already adjacent.

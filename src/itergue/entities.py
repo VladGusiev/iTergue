@@ -4,11 +4,13 @@ from itergue.geometry import Point
 from itergue.items import (
     Armor,
     AttackSpell,
+    BuffPotion,
     HelpingSpell,
     Item,
     Key,
     Potion,
     StoryItem,
+    TimeSpell,
     Weapon,
 )
 from itergue.level import Level, LevelError
@@ -53,6 +55,21 @@ ITEM_TYPES: dict[str, Item] = {
         ready_at=0,
         description="A simple spell, that produces soothing light",
         heal=20,
+    ),
+    "RAGE_POTION": BuffPotion(
+        name="Rage Potion",
+        display="%",
+        bonus=Stats(damage=8),
+        duration=5,
+        description="Enrages you for a short duration.",
+    ),
+    "TIME_STOP": TimeSpell(
+        name="Time Stop",
+        display="&",
+        freeze=3,
+        cooldown=10,
+        ready_at=0,
+        description="Freezes the time for a little while",
     ),
     "CHEST_KEY": Key(
         name="Chest Key",

@@ -21,6 +21,7 @@ class Game:
     )
     floor_items: dict[Point, Item] = field(default_factory=dict)
     turn: int = 0
+    frozen_until: int = 0
 
     def take_item(self, point: Point) -> Item | None:
         return self.floor_items.pop(point, None)
@@ -34,6 +35,12 @@ class Game:
     def end_turn(self) -> None:
         """Advance the clock and let enemy act. One turn one caller"""
         self.turn += 1
+        # Pruning after the increment, so duration means "turns you still act
+        # under it". Move it above and every buff silently lasts one turn longer.
+        for ended in self.player.expire_effects(self.turn):
+            self.log(f"{ended.name} wears off.")
+        if self.turn < self.frozen_until:
+            return  # time is stopped, so nobody else gets to move
         for enemy in self.enemies:
             if enemy.move(self.player, self.level):
                 self.log(

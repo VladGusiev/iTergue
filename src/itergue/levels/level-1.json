@@ -10,6 +10,8 @@
     { "type": "RUSTY_ARMOR", "x": 3, "y": 2 },
     { "type": "FIRE_BALL", "x": 2, "y": 2 },
     { "type": "SPELL_OF_MINOR_HEALING", "x": 2, "y": 3 },
+    { "type": "RAGE_POTION", "x": 8, "y": 6 },
+    { "type": "TIME_STOP", "x": 12, "y": 4 },
     { "type": "CHEST_KEY", "x": 35, "y": 10 },
     { "type": "MAGIC_STONE", "x": 5, "y": 15 }
   ],
