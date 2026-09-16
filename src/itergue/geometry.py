@@ -18,3 +18,5 @@ class Point:
 
 
 NEIGHBOURS = (Point(0, 1), Point(1, 0), Point(0, -1), Point(-1, 0))
+# The eight around a point, used to grow a room's floor into the walls that enclose it.
+AROUND = tuple(Point(x, y) for y in (-1, 0, 1) for x in (-1, 0, 1) if (x, y) != (0, 0))

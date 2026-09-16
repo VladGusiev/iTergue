@@ -21,7 +21,7 @@ def test_bad_json_rises_level_error(tmp_path):
 def test_wrong_enemy_type_rises_level_error(write_level):
     path = write_level(
         {
-            "tiles": ["#"],
+            "tiles": ["."],
             "player_start": {"x": 0, "y": 0},
             "enemies": [{"type": "INVALID_TYPE"}],
         }
@@ -34,7 +34,7 @@ def test_wrong_enemy_type_rises_level_error(write_level):
 def test_player_with_missing_start_position_rises_level_error(write_level):
     path = write_level(
         {
-            "tiles": ["#"],
+            "tiles": ["."],
             "player_start": {},
         }
     )
@@ -64,7 +64,7 @@ def test_tile_at_treats_off_map_as_wall(level):
 
 def test_cells_yields_every_tile_with_its_position(write_level):
     level = Level(
-        write_level({"tiles": ["#.", ".#"], "player_start": {"x": 0, "y": 0}})
+        write_level({"tiles": ["#.", ".#"], "player_start": {"x": 1, "y": 0}})
     )
     assert list(level.cells()) == [
         (Point(0, 0), "#"),
@@ -92,7 +92,7 @@ def test_cells_is_one_shot(level):
 
 def test_walkable_neighbours_skips_walls(write_level):
     level = Level(
-        write_level({"tiles": ["###", "...", "###"], "player_start": {"x": 0, "y": 0}})
+        write_level({"tiles": ["###", "...", "###"], "player_start": {"x": 1, "y": 1}})
     )
     assert set(level.walkable_neighbours(Point(1, 1))) == {Point(0, 1), Point(2, 1)}
 

@@ -9,7 +9,7 @@ def test_enemy_type_gives_default_stats(write_level):
     level = Level(
         write_level(
             {
-                "tiles": ["#"],
+                "tiles": ["."],
                 "player_start": {"x": 0, "y": 0},
                 "enemies": [{"type": "SLIME"}],
             }
@@ -23,7 +23,7 @@ def test_level_file_can_override_enemy_stats(write_level):
     level = Level(
         write_level(
             {
-                "tiles": ["#"],
+                "tiles": ["."],
                 "player_start": {"x": 0, "y": 0},
                 "enemies": [{"type": "ORC", "hp": 99, "damage": 1}],
             }
@@ -37,7 +37,7 @@ def test_load_items_keys_them_by_position(write_level):
     level = Level(
         write_level(
             {
-                "tiles": ["#"],
+                "tiles": ["."],
                 "player_start": {"x": 0, "y": 0},
                 "items": [{"type": "SMALL_HEALTH_POTION", "x": 3, "y": 4}],
             }
@@ -47,7 +47,7 @@ def test_load_items_keys_them_by_position(write_level):
 
 
 def test_a_level_without_items_loads_an_empty_floor(write_level):
-    level = Level(write_level({"tiles": ["#"], "player_start": {"x": 0, "y": 0}}))
+    level = Level(write_level({"tiles": ["."], "player_start": {"x": 0, "y": 0}}))
     assert load_items(level) == {}
 
 
@@ -55,7 +55,7 @@ def test_unknown_item_type_is_a_level_error(write_level):
     level = Level(
         write_level(
             {
-                "tiles": ["#"],
+                "tiles": ["."],
                 "player_start": {"x": 0, "y": 0},
                 "items": [{"type": "LASER", "x": 1, "y": 1}],
             }
@@ -71,7 +71,7 @@ def test_item_without_coordinates_is_a_level_error(write_level):
     level = Level(
         write_level(
             {
-                "tiles": ["#"],
+                "tiles": ["."],
                 "player_start": {"x": 0, "y": 0},
                 "items": [{"type": "DULL_SWORD"}],
             }
