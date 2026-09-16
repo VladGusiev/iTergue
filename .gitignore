@@ -229,8 +229,6 @@ pyrightconfig.json
 
 # Virtual environments
 .venv
-objectives.md
-project-goal.txt
 
 
 .agents
