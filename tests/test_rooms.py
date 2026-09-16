@@ -2,8 +2,15 @@
 
 import pytest
 
+from itergue.enemy import Enemy
+from itergue.game import Game
 from itergue.geometry import Point
 from itergue.level import MAX_ROOM, Level, LevelError
+from itergue.main import update_state
+from itergue.player import Player
+
+# Level 1's three doors, and the rooms they join.
+DOOR_TO_ROOM_1 = Point(13, 4)
 
 # One floor split in half by a door. The door is the only thing keeping these
 # two rooms apart, which is the whole reason the fill has to stop at one.
@@ -86,3 +93,45 @@ def test_level_one_is_four_rooms_and_the_player_starts_in_one(level):
     assert level.room_at(level.player_start) == 0
     for room in level.rooms:
         assert room.width <= MAX_ROOM.x and room.height <= MAX_ROOM.y
+
+
+def test_a_game_starts_in_the_room_its_player_is_standing_in(level):
+    # Not rooms[0]. Rooms are numbered in scan order, which has nothing to do with
+    # where anyone is standing.
+    game = Game(level=level, player=Player(position=Point(5, 11)), enemies=[])
+    assert game.current_room == 2
+
+
+def test_walking_through_a_door_changes_the_room(level):
+    game = Game(level=level, player=Player(position=Point(12, 4)), enemies=[])
+    assert game.current_room == 0
+    update_state(game, ord("l"))  # onto the door
+    update_state(game, ord("l"))  # and out the other side
+    assert game.player.position == Point(14, 4)
+    assert game.current_room == 1
+
+
+def test_a_doorway_still_shows_the_room_you_are_leaving(level):
+    game = Game(level=level, player=Player(position=Point(12, 4)), enemies=[])
+    update_state(game, ord("l"))
+    assert game.player.position == DOOR_TO_ROOM_1  # standing in the doorway
+    assert level.room_at(DOOR_TO_ROOM_1) is None  # which belongs to no room
+    assert game.current_room == 0  # so the room behind you is what stays on screen
+
+
+def test_an_enemy_in_another_room_does_not_move(level):
+    # It can path to the player: walkable_neighbours steps through doors, so
+    # without the room filter this enemy walks the whole way.
+    enemy = Enemy(position=Point(5, 11), hp=50)  # room 2
+    game = Game(level=level, player=Player(position=Point(5, 5)), enemies=[enemy])
+    assert game.current_room == 0
+    game.end_turn()
+    assert enemy.position == Point(5, 11)
+
+
+def test_an_enemy_in_your_room_still_moves(level):
+    # The control for the test above. Same call, same distance, one room.
+    enemy = Enemy(position=Point(10, 2), hp=50)  # room 0, with the player
+    game = Game(level=level, player=Player(position=Point(5, 5)), enemies=[enemy])
+    game.end_turn()
+    assert enemy.position != Point(10, 2)

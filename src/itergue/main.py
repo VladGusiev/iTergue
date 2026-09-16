@@ -111,6 +111,7 @@ def step(game: Game, target: Point) -> bool:
         game.remove_dead_enemies()
     else:
         game.player.set_position(target)
+        game.enter_room(target)
         picked_up = game.take_item(target)
         if picked_up is not None:
             if game.player.inventory.add(picked_up):
