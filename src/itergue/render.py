@@ -7,7 +7,7 @@ from itergue.enemy import Enemy
 from itergue.game import Game
 from itergue.geometry import Point
 from itergue.items import EquipSlot, Item
-from itergue.level import Level
+from itergue.level import Level, Room
 from itergue.messages import Message, MessageKind
 from itergue.player import Player
 
@@ -54,30 +54,60 @@ def render_messages(stdscr: curses.window, messages: deque[Message], top: int) -
         )
 
 
+def camera_for(room: Room, width: int, height: int) -> Point:
+    """The world position of the top-left cell, for a room centred on screen.
+
+    The camera used to be derived from the player, which centred the view on him.
+    It is derived from the room now, which centres the room. A room wider than the
+    screen is clipped on both sides rather than scrolled; MAX_ROOM is what keeps
+    that from happening on a terminal the game is meant for.
+    """
+    return room.origin - Point((width - room.width) // 2, (height - room.height) // 2)
+
+
 def render_level(
-    stdscr: curses.window, level: Level, camera: Point, height: int
+    stdscr: curses.window, level: Level, room: Room, camera: Point, height: int
 ) -> None:
-    for point, tile in level.cells():
+    """Draw one room and the walls around it. The rest of the floor stays dark."""
+    # room.visible, not level.cells(): a frame costs one room rather than one floor,
+    # and it can hold points off the map, which tile_at answers as wall.
+    for point in room.visible:
         screen = point - camera
         if 0 <= screen.y < height and 0 <= screen.x < curses.COLS:
-            stdscr.addch(screen.y, screen.x, tile)
+            stdscr.addch(screen.y, screen.x, level.tile_at(point.x, point.y))
 
 
 def render_items(
-    stdscr: curses.window, items: dict[Point, Item], camera: Point, height: int
+    stdscr: curses.window,
+    items: dict[Point, Item],
+    room: Room,
+    camera: Point,
+    height: int,
 ) -> None:
     for point, item in items.items():
         screen = point - camera
-        if 0 <= screen.y < height and 0 <= screen.x < curses.COLS:
+        if (
+            point in room.tiles
+            and 0 <= screen.y < height
+            and 0 <= screen.x < curses.COLS
+        ):
             stdscr.addch(screen.y, screen.x, item.display)
 
 
 def render_enemies(
-    stdscr: curses.window, enemies: list[Enemy], camera: Point, height: int
+    stdscr: curses.window,
+    enemies: list[Enemy],
+    room: Room,
+    camera: Point,
+    height: int,
 ) -> None:
     for enemy in enemies:
         screen = enemy.position - camera
-        if 0 <= screen.y < height and 0 <= screen.x < curses.COLS:
+        if (
+            enemy.position in room.tiles
+            and 0 <= screen.y < height
+            and 0 <= screen.x < curses.COLS
+        ):
             stdscr.addch(screen.y, screen.x, enemy.display)
 
 
@@ -177,15 +207,16 @@ def render_game_over(stdscr: curses.window) -> None:
 def render(stdscr: curses.window, game: Game) -> None:
     stdscr.clear()
 
-    # The camera is the world position of the top-left map cell. Everything on the
-    # map — including the player — is drawn through it, so nothing can drift apart.
+    # Everything on the map, the player included, is drawn through the camera, so
+    # nothing can drift apart.
     panel_top = curses.LINES - PANEL_LINES
     player = game.player
-    camera = player.position - Point(curses.COLS // 2, panel_top // 2)
+    room = game.level.rooms[game.current_room]
+    camera = camera_for(room, curses.COLS, panel_top)
 
-    render_level(stdscr, game.level, camera, panel_top)
-    render_items(stdscr, game.floor_items, camera, panel_top)
-    render_enemies(stdscr, game.enemies, camera, panel_top)
+    render_level(stdscr, game.level, room, camera, panel_top)
+    render_items(stdscr, game.floor_items, room, camera, panel_top)
+    render_enemies(stdscr, game.enemies, room, camera, panel_top)
     screen = player.position - camera
     stdscr.addstr(screen.y, screen.x, player.display)
 

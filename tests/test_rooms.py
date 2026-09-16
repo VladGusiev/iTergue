@@ -8,6 +8,7 @@ from itergue.geometry import Point
 from itergue.level import MAX_ROOM, Level, LevelError
 from itergue.main import update_state
 from itergue.player import Player
+from itergue.render import camera_for
 
 # Level 1's three doors, and the rooms they join.
 DOOR_TO_ROOM_1 = Point(13, 4)
@@ -135,3 +136,24 @@ def test_an_enemy_in_your_room_still_moves(level):
     game = Game(level=level, player=Player(position=Point(5, 5)), enemies=[enemy])
     game.end_turn()
     assert enemy.position != Point(10, 2)
+
+
+def test_the_camera_centres_the_room_not_the_player(level):
+    # The one piece of new arithmetic. An off-by-one here is invisible in every
+    # gate and obvious the moment you look at the screen.
+    room = level.rooms[0]  # 14x9
+    camera = camera_for(room, 80, 17)
+    on_screen = room.origin - camera
+    assert on_screen == Point((80 - 14) // 2, (17 - 9) // 2)
+    # The far corner lands the same distance from the other edge, give or take
+    # the odd column integer division drops.
+    far = Point(room.origin.x + room.width, room.origin.y + room.height) - camera
+    assert 80 - far.x == on_screen.x
+    assert 17 - far.y == on_screen.y
+
+
+def test_a_room_wider_than_the_screen_is_clipped_not_scrolled(level):
+    # MAX_ROOM is what stops this happening on a terminal the game is meant for.
+    # On a narrower one the room loses its edges rather than moving around.
+    camera = camera_for(level.rooms[2], 20, 17)  # room 2 is 41 wide
+    assert (level.rooms[2].origin - camera).x < 0
