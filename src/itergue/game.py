@@ -25,22 +25,18 @@ class Game:
     current_room: int = 0
 
     def __post_init__(self) -> None:
-        # Not rooms[0]: rooms are numbered in scan order, which has nothing to do
-        # with where anyone is standing. Level guarantees player_start is in a room,
-        # so a game built from one is always right here. A Game assembled by hand can
-        # stand its player anywhere, and room 0 is as good an answer as any for a
-        # player who is inside a wall.
+        # Rooms are numbered in scan order, so the starting room is whichever one
+        # holds the player. Level guarantees player_start is in one; a Game built by
+        # hand can stand its player in a wall, and room 0 answers for that.
         room = self.level.room_at(self.player.position)
         self.current_room = 0 if room is None else room
 
     def enter_room(self, position: Point) -> None:
         """Follow the player into the room at position.
 
-        A doorway keeps showing the room just left, because room_at is None on a
-        door and there is no third room to show. Stepping off the door picks up the
-        new one. This is a command, so the mover calls it and the renderer never
-        asks: a query that quietly rewrote current_room would be the same mistake
-        as an apply() hoisted above its guard.
+        A doorway keeps the room just left, because room_at is None on a door and
+        there is no third room to show. Stepping off the door picks up the new one.
+        A command, called by whatever moves the player, so the renderer only reads.
         """
         room = self.level.room_at(position)
         if room is not None:

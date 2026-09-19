@@ -55,14 +55,12 @@ def render_messages(stdscr: curses.window, messages: deque[Message], top: int) -
 
 
 def camera_for(room: Room, player: Point, width: int, height: int) -> Point:
-    """The world position of the top-left cell, for a room centred on screen.
+    """The world position of the top-left cell on screen.
 
-    The camera used to be derived from the player, which centred the view on him.
-    It is derived from the room now, which centres the room. MAX_ROOM keeps a room
-    inside an 80x24 terminal, but nothing keeps the terminal at 80x24, so on an axis
-    where the room does not fit we fall back to following the player. Centring a
-    room bigger than the screen puts the player off it, and the draw that would
-    then be asked for is out of bounds, which curses raises rather than ignores.
+    Centres the room on each axis it fits, and follows the player on each axis it
+    does not. MAX_ROOM keeps a room inside an 80x24 terminal; nothing keeps the
+    terminal at 80x24. A centred room bigger than the screen leaves the player off
+    it, and the player draw is unguarded, so curses raises on the next frame.
     """
     camera = room.origin - Point((width - room.width) // 2, (height - room.height) // 2)
     return Point(
@@ -75,8 +73,8 @@ def render_level(
     stdscr: curses.window, level: Level, room: Room, camera: Point, height: int
 ) -> None:
     """Draw one room and the walls around it. The rest of the floor stays dark."""
-    # room.visible, not level.cells(): a frame costs one room rather than one floor,
-    # and it can hold points off the map, which tile_at answers as wall.
+    # One frame costs one room. visible can hold points off the map, and tile_at
+    # answers those as wall.
     for point in room.visible:
         screen = point - camera
         if 0 <= screen.y < height and 0 <= screen.x < curses.COLS:
@@ -214,7 +212,7 @@ def render(stdscr: curses.window, game: Game) -> None:
     stdscr.clear()
 
     # Everything on the map, the player included, is drawn through the camera, so
-    # nothing can drift apart.
+    # nothing drifts apart.
     panel_top = curses.LINES - PANEL_LINES
     player = game.player
     room = game.level.rooms[game.current_room]

@@ -26,8 +26,8 @@ def build(write_level, tiles, start=(1, 1)):
 
 
 def test_a_door_bounds_a_room(write_level):
-    # The load-bearing claim of the whole design. Let the fill run through a door
-    # and every room on the floor silently becomes one room.
+    # The load-bearing claim of the design: a fill that runs through doors makes
+    # every room on the floor into one room.
     assert len(build(write_level, SPLIT).rooms) == 2
     assert len(build(write_level, JOINED).rooms) == 1
 
@@ -55,8 +55,7 @@ def test_visible_carries_the_walls_that_enclose_the_room(write_level):
 
 
 def test_room_at_is_none_in_a_doorway(write_level):
-    # True on every single room transition, not in some corner case, which is why
-    # Game has to remember the room rather than ask for it.
+    # True on every room transition, which is why Game remembers the room.
     assert build(write_level, SPLIT).room_at(Point(2, 2)) is None
 
 
@@ -97,8 +96,8 @@ def test_level_one_is_four_rooms_and_the_player_starts_in_one(level):
 
 
 def test_a_game_starts_in_the_room_its_player_is_standing_in(level):
-    # Not rooms[0]. Rooms are numbered in scan order, which has nothing to do with
-    # where anyone is standing.
+    # Rooms are numbered in scan order, so the starting room is whichever one holds
+    # the player, and room 2 here is not room 0.
     game = Game(level=level, player=Player(position=Point(5, 11)), enemies=[])
     assert game.current_room == 2
 
@@ -153,9 +152,8 @@ def test_the_camera_centres_the_room_not_the_player(level):
 
 
 def test_a_room_wider_than_the_screen_follows_the_player_instead(level):
-    # Centring a room bigger than the screen puts the player off it, and curses
-    # raises on the draw that follows rather than ignoring it. Verified: the game
-    # died at the player addstr in a 30-column terminal before this existed.
+    # A centred room bigger than the screen leaves the player off it, and the
+    # player draw is unguarded, so curses raises and the game dies.
     room, player = level.rooms[2], Point(5, 9)  # room 2 is 41 wide
     camera = camera_for(room, player, 20, 17)
     on_screen = player - camera

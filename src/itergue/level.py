@@ -12,8 +12,8 @@ WALL = RoomObject.WALL.value  # caching
 FLOOR = RoomObject.FLOOR.value
 
 # The biggest room a screen can hold: 80 columns, and 24 rows less the seven-line
-# panel. Fixed on purpose. Read it from curses.COLS instead and the same seed would
-# build a different dungeon on a different terminal.
+# panel. A fixed constant, never the live terminal size, so one seed builds one
+# dungeon everywhere.
 MAX_ROOM = Point(80, 17)
 
 
@@ -89,8 +89,8 @@ class Level:
                     f"Room {index} is {room.width}x{room.height}, larger than the "
                     f"{MAX_ROOM.x}x{MAX_ROOM.y} one screen can hold."
                 )
-        # Parse, don't validate: past this line a level always has a room to start
-        # in, so nothing downstream has to ask what happens when it doesn't.
+        # Past this line a level always has a room to start in, so nothing
+        # downstream handles the case where it does not.
         if self.room_at(self.player_start) is None:
             raise LevelError(
                 f"player_start {self.player_start} is not on a floor tile."
@@ -100,9 +100,8 @@ class Level:
         """Every enclosed region of floor, found by flood fill.
 
         Only FLOOR is filled through, so walls, doors and anything unrecognised all
-        bound a room. Rooms are discovered and never declared, which is what lets
-        them be any shape: a generator only has to carve, never to write down what
-        it carved.
+        bound a room. Rooms are discovered and never declared, so they take any
+        shape and whatever writes a level only has to carve.
         """
         rooms: list[Room] = []
         seen: set[Point] = set()
