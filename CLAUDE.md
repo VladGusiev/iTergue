@@ -15,6 +15,12 @@ deliberately does not repeat them, because two descriptions of the same thing dr
 `.agents/` is gitignored, so nothing in the workspace is recoverable from git. Do not
 delete files there.
 
+## Commits
+
+Subject line, and a body only when the change is not self-evident. No
+`Co-Authored-By` or `Claude-Session` trailers. The argument for a decision goes in
+that feature's walkthrough under `.agents/skills/teach/plans/`, not in the commit.
+
 ## Gates
 
 All five, under `uv run`, in the order CI runs them:
