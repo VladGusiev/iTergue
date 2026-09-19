@@ -7,7 +7,7 @@ from itergue.enemy import Enemy
 from itergue.game import Game
 from itergue.geometry import Point
 from itergue.items import EquipSlot, Item
-from itergue.level import Level
+from itergue.level import Level, Room
 from itergue.messages import Message, MessageKind
 from itergue.player import Player
 
@@ -54,30 +54,64 @@ def render_messages(stdscr: curses.window, messages: deque[Message], top: int) -
         )
 
 
+def camera_for(room: Room, player: Point, width: int, height: int) -> Point:
+    """The world position of the top-left cell on screen.
+
+    Centres the room on each axis it fits, and follows the player on each axis it
+    does not. MAX_ROOM keeps a room inside an 80x24 terminal; nothing keeps the
+    terminal at 80x24. A centred room bigger than the screen leaves the player off
+    it, and the player draw is unguarded, so curses raises on the next frame.
+    """
+    camera = room.origin - Point((width - room.width) // 2, (height - room.height) // 2)
+    return Point(
+        camera.x if room.width <= width else player.x - width // 2,
+        camera.y if room.height <= height else player.y - height // 2,
+    )
+
+
 def render_level(
-    stdscr: curses.window, level: Level, camera: Point, height: int
+    stdscr: curses.window, level: Level, room: Room, camera: Point, height: int
 ) -> None:
-    for point, tile in level.cells():
+    """Draw one room and the walls around it. The rest of the floor stays dark."""
+    # One frame costs one room. visible can hold points off the map, and tile_at
+    # answers those as wall.
+    for point in room.visible:
         screen = point - camera
         if 0 <= screen.y < height and 0 <= screen.x < curses.COLS:
-            stdscr.addch(screen.y, screen.x, tile)
+            stdscr.addch(screen.y, screen.x, level.tile_at(point.x, point.y))
 
 
 def render_items(
-    stdscr: curses.window, items: dict[Point, Item], camera: Point, height: int
+    stdscr: curses.window,
+    items: dict[Point, Item],
+    room: Room,
+    camera: Point,
+    height: int,
 ) -> None:
     for point, item in items.items():
         screen = point - camera
-        if 0 <= screen.y < height and 0 <= screen.x < curses.COLS:
+        if (
+            point in room.tiles
+            and 0 <= screen.y < height
+            and 0 <= screen.x < curses.COLS
+        ):
             stdscr.addch(screen.y, screen.x, item.display)
 
 
 def render_enemies(
-    stdscr: curses.window, enemies: list[Enemy], camera: Point, height: int
+    stdscr: curses.window,
+    enemies: list[Enemy],
+    room: Room,
+    camera: Point,
+    height: int,
 ) -> None:
     for enemy in enemies:
         screen = enemy.position - camera
-        if 0 <= screen.y < height and 0 <= screen.x < curses.COLS:
+        if (
+            enemy.position in room.tiles
+            and 0 <= screen.y < height
+            and 0 <= screen.x < curses.COLS
+        ):
             stdscr.addch(screen.y, screen.x, enemy.display)
 
 
@@ -177,15 +211,16 @@ def render_game_over(stdscr: curses.window) -> None:
 def render(stdscr: curses.window, game: Game) -> None:
     stdscr.clear()
 
-    # The camera is the world position of the top-left map cell. Everything on the
-    # map — including the player — is drawn through it, so nothing can drift apart.
+    # Everything on the map, the player included, is drawn through the camera, so
+    # nothing drifts apart.
     panel_top = curses.LINES - PANEL_LINES
     player = game.player
-    camera = player.position - Point(curses.COLS // 2, panel_top // 2)
+    room = game.level.rooms[game.current_room]
+    camera = camera_for(room, player.position, curses.COLS, panel_top)
 
-    render_level(stdscr, game.level, camera, panel_top)
-    render_items(stdscr, game.floor_items, camera, panel_top)
-    render_enemies(stdscr, game.enemies, camera, panel_top)
+    render_level(stdscr, game.level, room, camera, panel_top)
+    render_items(stdscr, game.floor_items, room, camera, panel_top)
+    render_enemies(stdscr, game.enemies, room, camera, panel_top)
     screen = player.position - camera
     stdscr.addstr(screen.y, screen.x, player.display)
 
