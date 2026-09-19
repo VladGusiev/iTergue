@@ -54,15 +54,21 @@ def render_messages(stdscr: curses.window, messages: deque[Message], top: int) -
         )
 
 
-def camera_for(room: Room, width: int, height: int) -> Point:
+def camera_for(room: Room, player: Point, width: int, height: int) -> Point:
     """The world position of the top-left cell, for a room centred on screen.
 
     The camera used to be derived from the player, which centred the view on him.
-    It is derived from the room now, which centres the room. A room wider than the
-    screen is clipped on both sides rather than scrolled; MAX_ROOM is what keeps
-    that from happening on a terminal the game is meant for.
+    It is derived from the room now, which centres the room. MAX_ROOM keeps a room
+    inside an 80x24 terminal, but nothing keeps the terminal at 80x24, so on an axis
+    where the room does not fit we fall back to following the player. Centring a
+    room bigger than the screen puts the player off it, and the draw that would
+    then be asked for is out of bounds, which curses raises rather than ignores.
     """
-    return room.origin - Point((width - room.width) // 2, (height - room.height) // 2)
+    camera = room.origin - Point((width - room.width) // 2, (height - room.height) // 2)
+    return Point(
+        camera.x if room.width <= width else player.x - width // 2,
+        camera.y if room.height <= height else player.y - height // 2,
+    )
 
 
 def render_level(
@@ -212,7 +218,7 @@ def render(stdscr: curses.window, game: Game) -> None:
     panel_top = curses.LINES - PANEL_LINES
     player = game.player
     room = game.level.rooms[game.current_room]
-    camera = camera_for(room, curses.COLS, panel_top)
+    camera = camera_for(room, player.position, curses.COLS, panel_top)
 
     render_level(stdscr, game.level, room, camera, panel_top)
     render_items(stdscr, game.floor_items, room, camera, panel_top)
