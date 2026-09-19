@@ -18,28 +18,30 @@ roadmap is arranged around.
 
 ## Where the game is today
 
-One hand-authored 40x20 open room, `src/itergue/levels/level-1.json`. Two enemy types,
-nine items, bump combat, an inventory with equipment slots, spells with targeting,
-cooldowns, buffs and a time stop. 172 tests, four gates green. No stairs, no floors, no
-rooms, no win.
+One hand-authored floor, `src/itergue/levels/level-1.json`, four rooms joined by three
+doors, one room on screen at a time. Two enemy types, nine items, bump combat, an
+inventory with equipment slots, spells with targeting, cooldowns, buffs and a time stop.
+190 tests, five gates green. No stairs, no floors, no key, no win.
 
 ---
 
-## 1. Room model
+## 1. Room model (done 2026-09-19)
 
-Make rooms a thing the code knows about.
+What shipped, which is not quite what this step described. Full account in
+`.agents/skills/teach/plans/0001-the-room-model.md`.
 
-- Rooms become explicit rectangles on `Level`, carved into the same tile grid the game
-  already uses. `Point`, `tile_at`, `walkable_neighbours` and the enemy BFS do not change.
-- `render_level` clips to the current room's rectangle rather than to the screen. The
-  camera is deleted.
-- Doors become a tile type in `RoomObject`. Walking onto one puts you in the next room.
-- Only the current room's enemies take turns. `end_turn` stops running a BFS for every
-  enemy on the floor.
-- Room dimensions are capped at a fixed maximum sized for an 80x24 terminal, **never
-  computed from `curses.COLS`**. A room size that depends on the terminal means the same
-  seed builds a different dungeon on a different screen, which would make step 3
-  worthless.
+- Rooms are **discovered**, not declared: `Level` flood fills the floor at load, bounded
+  by walls and doors, so a room takes any shape and a generator only has to carve.
+  `Point`, `tile_at`, `walkable_neighbours` and the enemy BFS were not touched.
+- `RoomObject.DOOR`. Walking onto a door puts you in the next room; a doorway keeps
+  showing the room you are leaving, since a door belongs to neither.
+- `render_level` draws one room and its walls. The camera was **not** deleted: it is
+  derived from the room instead of the player, and falls back to following the player on
+  any axis where the room does not fit the terminal.
+- `Game.current_room`. Only that room's enemies take turns.
+- `MAX_ROOM = Point(80, 17)`, a fixed constant and never the live terminal size, so one
+  seed builds one dungeon everywhere. A room over it is a `LevelError`, as is a
+  `player_start` off the floor.
 
 ## 2. Progression spine
 
@@ -63,6 +65,9 @@ Replace the placeholder floors.
   the generator's real requirements are visible.
 - The Python: randomness, seeding, and testing code whose output changes every run. None
   of it touched so far.
+- **The generator must not strand anything.** A floor region nothing connects to is
+  discovered as a room like any other, harmless today because the player can never be in
+  it, and fatal here: a StoryKey placed in one makes the floor unwinnable.
 
 ## 4. Content
 
@@ -74,6 +79,8 @@ Make floors 2 and 3 feel different from floor 1.
   `ITEM_TYPES` and `ENEMY_TYPES` instead of two.
 - Poison via `strike` is the obvious companion, and it is the first thing that would ever
   write `Enemy.effects`, which Lesson 23 left deliberately unused.
+- Enemies that follow the player through a door. Today they stay in their room. The
+  version worth building is an enemy that saw you leave, not the whole floor walking.
 
 ## 5. Endings
 
